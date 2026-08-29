@@ -1,6 +1,5 @@
-// Visuals, Starfield, Particle System, Input Manager, and Math Utilities
+// Visuals, Parallax Starfield, Cosmic Planets, Space Station Wreckage, Particle System, Input Manager, and Math Utilities
 
-// --- VECTOR 2D UTILS ---
 class Vec2 {
     constructor(x = 0, y = 0) {
         this.x = x;
@@ -18,7 +17,7 @@ class Vec2 {
     }
 }
 
-// --- STARFIELD & NEBULA PARALLAX ---
+// --- ADVANCED PARALLAX STARFIELD WITH PLANETS & DESTROYED SPACE STATIONS ---
 class Starfield {
     constructor(width, height) {
         this.width = width;
@@ -26,14 +25,72 @@ class Starfield {
         this.warpSpeed = 1;
         this.targetWarp = 1;
         this.stars = [];
-        this.nebulae = [
-            { x: width * 0.2, y: height * 0.3, radius: 250, color: 'rgba(90, 20, 160, 0.15)' },
-            { x: width * 0.8, y: height * 0.7, radius: 300, color: 'rgba(0, 140, 200, 0.12)' },
-            { x: width * 0.5, y: -100, radius: 350, color: 'rgba(230, 40, 120, 0.1)' }
+        
+        // 🪐 High-Fidelity Celestial Bodies (Planets & Moons)
+        this.planets = [
+            {
+                x: width * 0.8,
+                y: 120,
+                radius: 65,
+                vy: 0.12,
+                type: 'GAS_GIANT', // Ringed Planet
+                color1: '#4a154b',
+                color2: '#00d2ff',
+                ringColor: 'rgba(0, 240, 255, 0.35)',
+                ringTilt: 0.4
+            },
+            {
+                x: width * 0.2,
+                y: -150,
+                radius: 50,
+                vy: 0.08,
+                type: 'TERRESTRIAL', // Earth-like with atmosphere
+                color1: '#004080',
+                color2: '#00cc88',
+                atmosphere: 'rgba(0, 240, 255, 0.4)'
+            },
+            {
+                x: width * 0.7,
+                y: height + 200,
+                radius: 40,
+                vy: 0.15,
+                type: 'CRIMSON_MOON',
+                color1: '#660022',
+                color2: '#ff4400'
+            }
         ];
 
-        // Generate 3 layers of stars
-        for (let i = 0; i < 160; i++) {
+        // 🛰️ Destroyed Space Station Wreckage & Orbital Debris
+        this.wreckage = [
+            {
+                x: width * 0.3,
+                y: -80,
+                vy: 0.35,
+                rot: 0.2,
+                rotSpeed: 0.004,
+                type: 'SOLAR_ARRAY_STATION',
+                sparkTimer: 0
+            },
+            {
+                x: width * 0.75,
+                y: height * 0.5,
+                vy: 0.28,
+                rot: 1.5,
+                rotSpeed: -0.003,
+                type: 'BROKEN_COMMAND_DOME',
+                sparkTimer: 0
+            }
+        ];
+
+        // Glowing Nebulae
+        this.nebulae = [
+            { x: width * 0.2, y: height * 0.3, radius: 260, color: 'rgba(90, 20, 160, 0.16)' },
+            { x: width * 0.8, y: height * 0.7, radius: 320, color: 'rgba(0, 140, 200, 0.14)' },
+            { x: width * 0.5, y: -100, radius: 360, color: 'rgba(230, 40, 120, 0.12)' }
+        ];
+
+        // Multi-tier Starfield (180 stars)
+        for (let i = 0; i < 180; i++) {
             this.stars.push({
                 x: Math.random() * width,
                 y: Math.random() * height,
@@ -58,7 +115,7 @@ class Starfield {
     update() {
         this.warpSpeed += (this.targetWarp - this.warpSpeed) * 0.05;
 
-        // Move nebulae
+        // Move Nebulae
         for (let neb of this.nebulae) {
             neb.y += 0.2 * this.warpSpeed;
             if (neb.y - neb.radius > this.height) {
@@ -67,7 +124,28 @@ class Starfield {
             }
         }
 
-        // Move stars
+        // Move Planets
+        for (let p of this.planets) {
+            p.y += p.vy * this.warpSpeed;
+            if (p.y - p.radius * 2 > this.height) {
+                p.y = -p.radius * 2 - 100;
+                p.x = Math.random() * (this.width - p.radius * 2) + p.radius;
+            }
+        }
+
+        // Move Wreckage
+        for (let w of this.wreckage) {
+            w.y += w.vy * this.warpSpeed;
+            w.rot += w.rotSpeed;
+            w.sparkTimer++;
+
+            if (w.y > this.height + 150) {
+                w.y = -150;
+                w.x = Math.random() * (this.width - 100) + 50;
+            }
+        }
+
+        // Move Stars
         for (let star of this.stars) {
             star.y += star.speed * star.layer * 0.8 * this.warpSpeed;
             star.alpha += Math.sin(Date.now() * star.twinkleSpeed) * 0.02;
@@ -82,14 +160,15 @@ class Starfield {
     }
 
     draw(ctx) {
-        // Deep space gradient
+        // Deep Space Background
         const bgGrad = ctx.createLinearGradient(0, 0, 0, this.height);
-        bgGrad.addColorStop(0, '#050512');
-        bgGrad.addColorStop(1, '#090824');
+        bgGrad.addColorStop(0, '#040510');
+        bgGrad.addColorStop(0.5, '#070920');
+        bgGrad.addColorStop(1, '#090826');
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, this.width, this.height);
 
-        // Draw glowing nebulae
+        // 1. Nebulae
         for (let neb of this.nebulae) {
             const radGrad = ctx.createRadialGradient(neb.x, neb.y, 0, neb.x, neb.y, neb.radius);
             radGrad.addColorStop(0, neb.color);
@@ -100,14 +179,23 @@ class Starfield {
             ctx.fill();
         }
 
-        // Draw stars
+        // 2. Planets
+        for (let p of this.planets) {
+            this.drawPlanet(ctx, p);
+        }
+
+        // 3. Destroyed Space Stations Wreckage
+        for (let w of this.wreckage) {
+            this.drawWreckage(ctx, w);
+        }
+
+        // 4. Stars
         for (let star of this.stars) {
             ctx.fillStyle = star.layer === 3 ? `rgba(180, 240, 255, ${star.alpha})` :
                             star.layer === 2 ? `rgba(255, 230, 180, ${star.alpha})` :
                                                `rgba(255, 255, 255, ${star.alpha})`;
 
             if (this.warpSpeed > 2) {
-                // Streak stars in warp
                 ctx.strokeStyle = ctx.fillStyle;
                 ctx.lineWidth = star.size;
                 ctx.beginPath();
@@ -120,6 +208,134 @@ class Starfield {
                 ctx.fill();
             }
         }
+    }
+
+    drawPlanet(ctx, p) {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+
+        // Planet Sphere with 3D Spherical Light Gradient
+        const pGrad = ctx.createRadialGradient(-p.radius * 0.35, -p.radius * 0.35, p.radius * 0.1, 0, 0, p.radius);
+        pGrad.addColorStop(0, '#ffffff');
+        pGrad.addColorStop(0.3, p.color2);
+        pGrad.addColorStop(0.8, p.color1);
+        pGrad.addColorStop(1, '#02030a');
+
+        ctx.fillStyle = pGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Atmospheric Corona / Glow
+        if (p.atmosphere) {
+            ctx.strokeStyle = p.atmosphere;
+            ctx.lineWidth = 4;
+            ctx.shadowColor = p.atmosphere;
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.arc(0, 0, p.radius + 2, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        // Planetary Rings for Gas Giant
+        if (p.type === 'GAS_GIANT') {
+            ctx.save();
+            ctx.rotate(p.ringTilt);
+            ctx.strokeStyle = p.ringColor;
+            ctx.lineWidth = 7;
+            ctx.shadowColor = p.color2;
+            ctx.shadowBlur = 10;
+
+            ctx.beginPath();
+            ctx.ellipse(0, 0, p.radius * 1.8, p.radius * 0.45, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        ctx.restore();
+    }
+
+    drawWreckage(ctx, w) {
+        ctx.save();
+        ctx.translate(w.x, w.y);
+        ctx.rotate(w.rot);
+
+        ctx.strokeStyle = '#3a4460';
+        ctx.fillStyle = '#181d2a';
+        ctx.lineWidth = 1.5;
+
+        if (w.type === 'SOLAR_ARRAY_STATION') {
+            // Broken Central Truss
+            ctx.strokeRect(-60, -4, 120, 8);
+            ctx.fillRect(-60, -4, 120, 8);
+
+            // Left Intact Solar Panel
+            ctx.fillStyle = 'rgba(0, 150, 255, 0.4)';
+            ctx.strokeStyle = '#00f0ff';
+            ctx.strokeRect(-55, -35, 30, 70);
+            ctx.fillRect(-55, -35, 30, 70);
+
+            // Solar Grid Lines
+            for (let y = -25; y <= 25; y += 10) {
+                ctx.beginPath();
+                ctx.moveTo(-55, y);
+                ctx.lineTo(-25, y);
+                ctx.stroke();
+            }
+
+            // Right Severed Shattered Solar Panel
+            ctx.beginPath();
+            ctx.moveTo(25, -35);
+            ctx.lineTo(55, -35);
+            ctx.lineTo(40, 10);
+            ctx.lineTo(25, -10);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(0, 150, 255, 0.25)';
+            ctx.fill();
+            ctx.stroke();
+
+            // Blinking Red Beacon on Truss
+            if (Math.floor(Date.now() / 400) % 2 === 0) {
+                ctx.fillStyle = '#ff0033';
+                ctx.shadowColor = '#ff0033';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Electrical Sparks
+            if (w.sparkTimer % 90 < 10) {
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(40, 10);
+                ctx.lineTo(48 + Math.random() * 8, 14 + Math.random() * 8);
+                ctx.lineTo(54, 8);
+                ctx.stroke();
+            }
+        } else {
+            // Shattered Command Dome Ring
+            ctx.beginPath();
+            ctx.arc(0, 0, 30, 0, Math.PI * 1.4);
+            ctx.stroke();
+
+            ctx.fillStyle = '#222838';
+            ctx.fillRect(-15, -15, 30, 30);
+
+            // Blinking Cyan Beacon
+            if (Math.floor(Date.now() / 600) % 2 === 0) {
+                ctx.fillStyle = '#00f0ff';
+                ctx.shadowColor = '#00f0ff';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(-10, -10, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        ctx.restore();
     }
 }
 
@@ -164,7 +380,6 @@ class ParticleSystem {
                 decay: Math.random() * 0.03 + 0.02
             });
         }
-        // Small shockwave
         this.shockwaves.push({
             x: x,
             y: y,
@@ -174,6 +389,24 @@ class ParticleSystem {
             alpha: 0.8,
             decay: 0.05
         });
+    }
+
+    spawnRockDust(x, y, count = 8) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 3 + 1;
+            this.particles.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                size: Math.random() * 3 + 1.5,
+                color: Math.random() > 0.5 ? '#8c7e72' : '#bfa99b',
+                alpha: 0.8,
+                life: 1.0,
+                decay: 0.04
+            });
+        }
     }
 
     spawnShockwave(x, y, maxRadius = 300, color = '#00f0ff') {
@@ -203,7 +436,6 @@ class ParticleSystem {
     }
 
     update() {
-        // Update particles
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];
             p.x += p.vx;
@@ -215,7 +447,6 @@ class ParticleSystem {
             }
         }
 
-        // Update shockwaves
         for (let i = this.shockwaves.length - 1; i >= 0; i--) {
             const s = this.shockwaves[i];
             s.radius += (s.maxRadius - s.radius) * 0.12 + 2;
@@ -225,7 +456,6 @@ class ParticleSystem {
             }
         }
 
-        // Update floating text
         for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
             const t = this.floatingTexts[i];
             t.y += t.vy;
@@ -239,7 +469,6 @@ class ParticleSystem {
 
     draw(ctx) {
         ctx.save();
-        // Draw Shockwaves
         for (let s of this.shockwaves) {
             ctx.strokeStyle = s.color;
             ctx.globalAlpha = s.alpha;
@@ -249,7 +478,6 @@ class ParticleSystem {
             ctx.stroke();
         }
 
-        // Draw Particles
         for (let p of this.particles) {
             ctx.fillStyle = p.color;
             ctx.globalAlpha = p.alpha;
@@ -260,7 +488,6 @@ class ParticleSystem {
             ctx.fill();
         }
 
-        // Draw Floating Text
         for (let t of this.floatingTexts) {
             ctx.fillStyle = t.color;
             ctx.globalAlpha = t.alpha;
@@ -274,7 +501,7 @@ class ParticleSystem {
     }
 }
 
-// --- INPUT MANAGER (MOUSE, TOUCH, KEYBOARD) ---
+// --- INPUT MANAGER ---
 class InputManager {
     constructor(canvas) {
         this.canvas = canvas;
@@ -284,7 +511,6 @@ class InputManager {
         this.autoFire = true;
         
         this.keys = {};
-        this.justPressedKeys = {};
         this.bombTriggered = false;
 
         this.initListeners();
@@ -301,15 +527,11 @@ class InputManager {
             this.mousePos.x = (clientX - rect.left) * scaleX;
             this.mousePos.y = (clientY - rect.top) * scaleY;
 
-            // Clamp inside canvas
             this.mousePos.x = Math.max(20, Math.min(this.canvas.width - 20, this.mousePos.x));
             this.mousePos.y = Math.max(30, Math.min(this.canvas.height - 20, this.mousePos.y));
         };
 
-        // Mouse Events
-        window.addEventListener('mousemove', (e) => {
-            updateCoords(e);
-        });
+        window.addEventListener('mousemove', (e) => updateCoords(e));
 
         this.canvas.addEventListener('mousedown', (e) => {
             if (e.button === 0) this.isMouseDown = true;
@@ -325,7 +547,6 @@ class InputManager {
 
         this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-        // Touch Events
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             this.isMouseDown = true;
@@ -342,7 +563,6 @@ class InputManager {
             this.isMouseDown = false;
         });
 
-        // Keyboard Events
         window.addEventListener('keydown', (e) => {
             this.keys[e.code] = true;
             if (e.code === 'Space' || e.code === 'KeyB') {

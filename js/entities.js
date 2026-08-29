@@ -1286,3 +1286,155 @@ class Enemy {
         }
     }
 }
+
+// --- DESTRUCTIBLE DRIFTING ASTEROIDS (BONGKAHAN ASTEROID PENGGANGGU) ---
+class Asteroid {
+    constructor(game, x, y, size = 'large', vx = null, vy = null) {
+        this.game = game;
+        this.x = x;
+        this.y = y;
+        this.size = size; // 'large', 'medium', 'small'
+        this.isDead = false;
+        
+        if (size === 'large') {
+            this.radius = 32;
+            this.hp = 65;
+            this.scoreValue = 150;
+            this.vy = vy !== null ? vy : (Math.random() * 1.2 + 0.8);
+            this.vx = vx !== null ? vx : ((Math.random() - 0.5) * 1.0);
+        } else if (size === 'medium') {
+            this.radius = 20;
+            this.hp = 35;
+            this.scoreValue = 100;
+            this.vy = vy !== null ? vy : (Math.random() * 1.6 + 1.0);
+            this.vx = vx !== null ? vx : ((Math.random() - 0.5) * 1.5);
+        } else {
+            this.radius = 12;
+            this.hp = 15;
+            this.scoreValue = 50;
+            this.vy = vy !== null ? vy : (Math.random() * 2.0 + 1.2);
+            this.vx = vx !== null ? vx : ((Math.random() - 0.5) * 2.0);
+        }
+        this.maxHp = this.hp;
+
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotSpeed = (Math.random() - 0.5) * 0.04;
+
+        // Procedural Jagged Rock Vertices
+        this.numVertices = size === 'large' ? 12 : (size === 'medium' ? 10 : 8);
+        this.vertices = [];
+        for (let i = 0; i < this.numVertices; i++) {
+            const angle = (i / this.numVertices) * Math.PI * 2;
+            const variance = 0.75 + Math.random() * 0.5; // 75% to 125% radius
+            this.vertices.push({
+                x: Math.cos(angle) * this.radius * variance,
+                y: Math.sin(angle) * this.radius * variance
+            });
+        }
+
+        // Procedural Craters
+        this.craters = [];
+        const numCraters = size === 'large' ? 3 : (size === 'medium' ? 2 : 1);
+        for (let i = 0; i < numCraters; i++) {
+            const dist = Math.random() * (this.radius * 0.5);
+            const ang = Math.random() * Math.PI * 2;
+            this.craters.push({
+                x: Math.cos(ang) * dist,
+                y: Math.sin(ang) * dist,
+                r: Math.random() * (this.radius * 0.25) + 3
+            });
+        }
+    }
+
+    takeDamage(amount) {
+        this.hp -= amount;
+        this.game.particles.spawnRockDust(this.x, this.y, 4);
+        window.audio.playHit();
+
+        if (this.hp <= 0) {
+            this.hp = 0;
+            this.destroy();
+        }
+    }
+
+    destroy() {
+        this.isDead = true;
+        this.game.particles.spawnExplosion(this.x, this.y, '#8c7e72', 15, 0.8);
+        this.game.particles.spawnRockDust(this.x, this.y, 12);
+        window.audio.playExplosion('small');
+        this.game.addScore(this.scoreValue, this.x, this.y);
+
+        // Split into smaller sub-asteroids
+        if (this.size === 'large') {
+            for (let i = -1; i <= 1; i += 2) {
+                const sub = new Asteroid(this.game, this.x + i * 15, this.y, 'medium', this.vx + i * 0.8, this.vy * 1.2);
+                this.game.asteroids.push(sub);
+            }
+        } else if (this.size === 'medium') {
+            for (let i = -1; i <= 1; i += 2) {
+                const sub = new Asteroid(this.game, this.x + i * 10, this.y, 'small', this.vx + i * 1.2, this.vy * 1.3);
+                this.game.asteroids.push(sub);
+            }
+        }
+
+        // Powerup drop chance
+        if (Math.random() < 0.10 && this.size !== 'small') {
+            const types = ['DUAL', 'SPREAD', 'LASER', 'SHIELD', 'BOMB', 'HEAL'];
+            const chosen = types[Math.floor(Math.random() * types.length)];
+            this.game.powerUps.push(new PowerUp(this.x, this.y, chosen));
+        }
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.rotation += this.rotSpeed;
+
+        if (this.y > this.game.height + 60 || this.x < -60 || this.x > this.game.width + 60) {
+            this.isDead = true;
+        }
+    }
+
+    draw(ctx) {
+        if (this.isDead) return;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+
+        // 3D Spherical Rocky Gradient
+        const rockGrad = ctx.createRadialGradient(-this.radius * 0.35, -this.radius * 0.35, 2, 0, 0, this.radius);
+        rockGrad.addColorStop(0, '#d1c2b4');
+        rockGrad.addColorStop(0.4, '#8a7868');
+        rockGrad.addColorStop(0.8, '#4a3d32');
+        rockGrad.addColorStop(1, '#241c16');
+
+        ctx.fillStyle = rockGrad;
+        ctx.strokeStyle = '#a69280';
+        ctx.lineWidth = 1.5;
+
+        // Jagged Polygon Outline
+        ctx.beginPath();
+        for (let i = 0; i < this.vertices.length; i++) {
+            const v = this.vertices[i];
+            if (i === 0) ctx.moveTo(v.x, v.y);
+            else ctx.lineTo(v.x, v.y);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Shaded Craters
+        for (let c of this.craters) {
+            ctx.fillStyle = 'rgba(25, 18, 12, 0.6)';
+            ctx.strokeStyle = 'rgba(210, 195, 180, 0.4)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        ctx.restore();
+    }
+}

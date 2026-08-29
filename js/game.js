@@ -1,4 +1,4 @@
-// Main Game Engine Controller with Cutscenes, Visual Wave Tracker, Lives & Continue System
+// Main Game Engine Controller with Asteroids Hazard, Cutscenes, 10 Waves Tracker, Lives & Continue System
 
 class Game {
     constructor() {
@@ -19,18 +19,20 @@ class Game {
 
         this.player = new Player(this);
         this.enemies = [];
+        this.asteroids = [];
         this.playerBullets = [];
         this.enemyBullets = [];
         this.powerUps = [];
         this.currentBoss = null;
 
+        this.asteroidSpawnTimer = 0;
         this.score = 0;
         this.highScore = parseInt(localStorage.getItem('neo_galaga_high_score') || '0', 10);
         this.multiplier = 1;
         this.comboTimer = 0;
         this.waveTick = 0;
 
-        this.state = 'TITLE'; // TITLE, CUTSCENE, PLAYING, BOSS_WARNING, STAGE_CLEAR, GAME_OVER, VICTORY
+        this.state = 'TITLE';
         this.warningTimer = 0;
 
         this.initDOM();
@@ -89,7 +91,6 @@ class Game {
                 const clickX = (e.clientX - rect.left) * scaleX;
                 const clickY = (e.clientY - rect.top) * scaleY;
 
-                // Check if Skip area clicked (top-right)
                 if (clickX > this.width - 240 && clickY < 60) {
                     this.cutscenes.skip();
                 } else {
@@ -119,6 +120,7 @@ class Game {
         this.multiplier = 1;
         this.comboTimer = 0;
         this.enemies = [];
+        this.asteroids = [];
         this.playerBullets = [];
         this.enemyBullets = [];
         this.powerUps = [];
@@ -128,7 +130,6 @@ class Game {
         this.waveManager.reset();
         this.hideAllModals();
 
-        // 🎬 Play Mission Prologue Cutscene
         this.state = 'CUTSCENE';
         this.cutscenes.playScene('PROLOGUE', () => {
             this.state = 'PLAYING';
@@ -144,6 +145,7 @@ class Game {
         this.multiplier = 1;
         this.comboTimer = 0;
         this.enemies = [];
+        this.asteroids = [];
         this.playerBullets = [];
         this.enemyBullets = [];
         this.powerUps = [];
@@ -161,6 +163,7 @@ class Game {
     proceedNextStage() {
         this.hideAllModals();
         this.enemies = [];
+        this.asteroids = [];
         this.enemyBullets = [];
         this.currentBoss = null;
         this.starfield.setWarp(false);
@@ -195,7 +198,6 @@ class Game {
     triggerBossEncounter(stageNum) {
         const bossSceneKey = stageNum === 1 ? 'BOSS_1_INTRO' : (stageNum === 2 ? 'BOSS_2_INTRO' : 'BOSS_3_INTRO');
 
-        // 🎬 Play Cinematic Boss Reveal Cutscene
         this.state = 'CUTSCENE';
         this.cutscenes.playScene(bossSceneKey, () => {
             this.state = 'BOSS_WARNING';
@@ -224,7 +226,6 @@ class Game {
         const currentStage = this.waveManager.currentStage;
 
         if (currentStage >= 3) {
-            // 🎬 Play Grand Epilogue Cutscene upon final victory
             this.state = 'CUTSCENE';
             this.cutscenes.playScene('EPILOGUE', () => {
                 this.onVictory();
@@ -232,7 +233,6 @@ class Game {
             return;
         }
 
-        // 🎬 Play Warp Cutscene between stages
         const warpScene = currentStage === 1 ? 'STAGE_1_CLEAR_WARP' : 'STAGE_2_CLEAR_WARP';
         this.state = 'CUTSCENE';
         this.cutscenes.playScene(warpScene, () => {
@@ -265,9 +265,23 @@ class Game {
     }
 
     checkCollisions() {
+        // 1. Player Bullets vs Asteroids & Enemies
         for (let b of this.playerBullets) {
             if (b.isDead) continue;
 
+            // vs Asteroids
+            for (let a of this.asteroids) {
+                if (a.isDead) continue;
+                if (Math.hypot(b.x - a.x, b.y - a.y) < b.radius + a.radius) {
+                    a.takeDamage(b.damage);
+                    if (b.type !== 'laser') b.isDead = true;
+                    break;
+                }
+            }
+
+            if (b.isDead) continue;
+
+            // vs Regular Enemies
             for (let e of this.enemies) {
                 if (e.isDead) continue;
                 const dist = Math.hypot(b.x - e.x, b.y - e.y);
@@ -278,6 +292,7 @@ class Game {
                 }
             }
 
+            // vs Boss
             if (this.currentBoss && !this.currentBoss.isDead) {
                 if (this.currentBoss.shields) {
                     for (let i = 0; i < this.currentBoss.shields.length; i++) {
@@ -304,7 +319,30 @@ class Game {
             }
         }
 
+        // 2. Asteroids vs Enemies (Crushing Collisions)
+        for (let a of this.asteroids) {
+            if (a.isDead) continue;
+            for (let e of this.enemies) {
+                if (e.isDead) continue;
+                if (Math.hypot(a.x - e.x, a.y - e.y) < a.radius + e.radius) {
+                    e.takeDamage(80);
+                    a.takeDamage(40);
+                }
+            }
+        }
+
+        // 3. Player Collisions
         if (!this.player.isDead && !this.player.isCaptured) {
+            // vs Asteroids
+            for (let a of this.asteroids) {
+                if (a.isDead) continue;
+                if (Math.hypot(a.x - this.player.x, a.y - this.player.y) < a.radius + this.player.radius) {
+                    this.player.takeDamage(20);
+                    a.takeDamage(50);
+                }
+            }
+
+            // vs Enemy Bullets
             for (let eb of this.enemyBullets) {
                 if (eb.isDead) continue;
                 const dist = Math.hypot(eb.x - this.player.x, eb.y - this.player.y);
@@ -314,6 +352,7 @@ class Game {
                 }
             }
 
+            // vs Enemy Ships
             for (let e of this.enemies) {
                 if (e.isDead) continue;
                 const dist = Math.hypot(e.x - this.player.x, e.y - this.player.y);
@@ -323,6 +362,7 @@ class Game {
                 }
             }
 
+            // vs PowerUps
             for (let p of this.powerUps) {
                 if (p.isDead) continue;
                 const dist = Math.hypot(p.x - this.player.x, p.y - this.player.y);
@@ -331,6 +371,18 @@ class Game {
                     p.isDead = true;
                 }
             }
+        }
+    }
+
+    spawnAsteroidsRoutine() {
+        this.asteroidSpawnTimer++;
+        const spawnInterval = (this.waveManager.currentStage === 2) ? 120 : 200; // More frequent in Asteroid Core
+
+        if (this.asteroidSpawnTimer >= spawnInterval) {
+            this.asteroidSpawnTimer = 0;
+            const spawnX = Math.random() * (this.width - 100) + 50;
+            const size = Math.random() < 0.5 ? 'large' : 'medium';
+            this.asteroids.push(new Asteroid(this, spawnX, -40, size));
         }
     }
 
@@ -355,7 +407,9 @@ class Game {
             this.player.update(this.input);
             this.waveManager.update();
             this.waveManager.checkWaveCompletion();
+            this.spawnAsteroidsRoutine();
 
+            this.asteroids.forEach(a => a.update());
             this.playerBullets.forEach(b => b.update());
             this.enemyBullets.forEach(b => b.update());
             this.powerUps.forEach(p => p.update());
@@ -367,6 +421,7 @@ class Game {
 
             this.checkCollisions();
 
+            this.asteroids = this.asteroids.filter(a => !a.isDead);
             this.playerBullets = this.playerBullets.filter(b => !b.isDead);
             this.enemyBullets = this.enemyBullets.filter(b => !b.isDead);
             this.powerUps = this.powerUps.filter(p => !p.isDead);
@@ -525,6 +580,9 @@ class Game {
             ctx.restore();
             return;
         }
+
+        // Draw Destructible Asteroids
+        this.asteroids.forEach(a => a.draw(ctx));
 
         this.powerUps.forEach(p => p.draw(ctx));
         this.playerBullets.forEach(b => b.draw(ctx));
