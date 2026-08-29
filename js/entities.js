@@ -1,4 +1,4 @@
-// High-Fidelity Realistic Sci-Fi Spacecraft Renderers & Entity Systems
+// High-Fidelity Realistic Sci-Fi Spacecraft Renderers, Safe Particle Fallbacks, and Asteroid Entities
 
 // --- BULLETS ---
 class Bullet {
@@ -477,7 +477,6 @@ class Player {
             ctx.globalAlpha = 0.4;
         }
 
-        // 1. Aerodynamic Wings with Metallic Gradient
         const wingGrad = ctx.createLinearGradient(-22, 0, 22, 0);
         wingGrad.addColorStop(0, '#10223d');
         wingGrad.addColorStop(0.3, '#d8e6f8');
@@ -489,23 +488,21 @@ class Player {
         ctx.strokeStyle = '#00f0ff';
         ctx.lineWidth = 1.5;
 
-        // Main Swept Wing Geometry
         ctx.beginPath();
-        ctx.moveTo(0, -24);        // Nose
-        ctx.lineTo(8, -6);         // Canard transition
-        ctx.lineTo(22, 12);        // Right wingtip
-        ctx.lineTo(18, 18);        // Right trailing edge
-        ctx.lineTo(6, 14);         // Engine nacelle right
-        ctx.lineTo(0, 20);         // Center tail
-        ctx.lineTo(-6, 14);        // Engine nacelle left
-        ctx.lineTo(-18, 18);       // Left trailing edge
-        ctx.lineTo(-22, 12);       // Left wingtip
-        ctx.lineTo(-8, -6);        // Canard transition left
+        ctx.moveTo(0, -24);
+        ctx.lineTo(8, -6);
+        ctx.lineTo(22, 12);
+        ctx.lineTo(18, 18);
+        ctx.lineTo(6, 14);
+        ctx.lineTo(0, 20);
+        ctx.lineTo(-6, 14);
+        ctx.lineTo(-18, 18);
+        ctx.lineTo(-22, 12);
+        ctx.lineTo(-8, -6);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // 2. Armor Panel Lines & Insets
         ctx.strokeStyle = 'rgba(0, 240, 255, 0.7)';
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -515,7 +512,6 @@ class Player {
         ctx.lineTo(16, 10);
         ctx.stroke();
 
-        // 3. Realistic Cockpit Canopy (Tinted Glass with Light Glint)
         const canopyGrad = ctx.createLinearGradient(0, -12, 0, 4);
         canopyGrad.addColorStop(0, '#00ffff');
         canopyGrad.addColorStop(0.4, '#003366');
@@ -529,31 +525,27 @@ class Player {
         ctx.ellipse(0, -2, 4, 10, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Canopy Glint Highlight
         ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
         ctx.beginPath();
         ctx.ellipse(-1.5, -5, 1.5, 4, -0.2, 0, Math.PI * 2);
         ctx.fill();
 
-        // 4. Twin Vectoring Engine Nozzles with Blue Heat Glow
         ctx.fillStyle = '#00f0ff';
         ctx.shadowColor = '#00f0ff';
         ctx.shadowBlur = 10;
         ctx.fillRect(-6, 15, 3.5, 4);
         ctx.fillRect(2.5, 15, 3.5, 4);
 
-        // Wingtip Navigation Strobe Lights (Port Red, Starboard Green)
-        ctx.fillStyle = '#39ff14'; // Green right
+        ctx.fillStyle = '#39ff14';
         ctx.beginPath();
         ctx.arc(21, 12, 2, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = '#ff0033'; // Red left
+        ctx.fillStyle = '#ff0033';
         ctx.beginPath();
         ctx.arc(-21, 12, 2, 0, Math.PI * 2);
         ctx.fill();
 
-        // Shield Bubble
         if (this.shield > 0) {
             ctx.strokeStyle = `rgba(0, 240, 255, ${0.3 + (this.shield / this.maxShield) * 0.5})`;
             ctx.shadowColor = '#00f0ff';
@@ -607,7 +599,7 @@ class Player {
     }
 }
 
-// --- REALISTIC ALIEN SPACECRAFT WITH METALLIC GRADIENTS & DETAILED PANELS ---
+// --- REALISTIC ALIEN SPACECRAFT ---
 class Enemy {
     constructor(game, type, gridX, gridY, entryPath = null) {
         this.game = game;
@@ -715,7 +707,9 @@ class Enemy {
         }
 
         this.hp -= amount;
-        this.game.particles.spawnExplosion(this.x, this.y, this.color, 4, 0.4);
+        if (this.game.particles) {
+            this.game.particles.spawnExplosion(this.x, this.y, this.color, 4, 0.4);
+        }
         window.audio.playHit();
 
         if (this.hp <= 0) {
@@ -726,15 +720,21 @@ class Enemy {
 
     warpDash() {
         this.warpCooldown = 90;
-        this.game.particles.spawnShockwave(this.x, this.y, 60, '#ff00aa');
+        if (this.game.particles) {
+            this.game.particles.spawnShockwave(this.x, this.y, 60, '#ff00aa');
+        }
         this.x += (Math.random() - 0.5) * 120;
         this.x = Math.max(40, Math.min(this.game.width - 40, this.x));
-        this.game.particles.spawnShockwave(this.x, this.y, 60, '#ff00aa');
+        if (this.game.particles) {
+            this.game.particles.spawnShockwave(this.x, this.y, 60, '#ff00aa');
+        }
     }
 
     destroy() {
         this.isDead = true;
-        this.game.particles.spawnExplosion(this.x, this.y, this.color, 25, 1.0);
+        if (this.game.particles) {
+            this.game.particles.spawnExplosion(this.x, this.y, this.color, 25, 1.0);
+        }
         window.audio.playExplosion('medium');
         this.game.addScore(this.scoreValue, this.x, this.y);
 
@@ -745,7 +745,9 @@ class Enemy {
                 subDrone.speed = 4.8;
                 this.game.enemies.push(subDrone);
             }
-            this.game.particles.spawnFloatingText("SPLIT!", this.x, this.y - 20, '#39ff14', 16);
+            if (this.game.particles) {
+                this.game.particles.spawnFloatingText("SPLIT!", this.x, this.y - 20, '#39ff14', 16);
+            }
         }
 
         if (Math.random() < 0.14) {
@@ -853,7 +855,9 @@ class Enemy {
                     p.y -= 1.0;
                     if (this.tractorBeamTimer > 75 && Math.abs(p.x - this.x) < 25) {
                         p.isCaptured = true;
-                        this.game.particles.spawnFloatingText("SHIP CAPTURED!", p.x, p.y - 30, '#ff0055', 20);
+                        if (this.game.particles) {
+                            this.game.particles.spawnFloatingText("SHIP CAPTURED!", p.x, p.y - 30, '#ff0055', 20);
+                        }
                     }
                 }
             }
@@ -903,7 +907,6 @@ class Enemy {
     draw(ctx) {
         if (this.isDead) return;
 
-        // Sniper Laser Sight Line
         if (this.type === 'SNIPER' && this.isAimingSniper) {
             ctx.save();
             ctx.strokeStyle = `rgba(255, 60, 0, ${0.3 + (this.sniperAimTimer / 40) * 0.7})`;
@@ -931,7 +934,6 @@ class Enemy {
             ctx.globalAlpha = this.cloakAlpha;
         }
 
-        // Elite Aura
         if (this.game.waveManager.currentWave >= 7) {
             ctx.strokeStyle = 'rgba(255, 0, 85, 0.5)';
             ctx.lineWidth = 1.5;
@@ -940,10 +942,7 @@ class Enemy {
             ctx.stroke();
         }
 
-        // --- DETAILED REALISTIC SPACECRAFT VECTOR DRAWINGS ---
-        
         if (this.type === 'COMMANDER') {
-            // 👑 TITAN COMMAND CRUISER (Gold / Heavy Composite Armor)
             const hullGrad = ctx.createLinearGradient(-24, 0, 24, 0);
             hullGrad.addColorStop(0, '#553300');
             hullGrad.addColorStop(0.3, '#ffcc00');
@@ -957,14 +956,13 @@ class Enemy {
             ctx.shadowColor = '#ffea00';
             ctx.shadowBlur = 10;
 
-            // Main Heavy Command Fuselage
             ctx.beginPath();
-            ctx.moveTo(0, -22);        // Prow
-            ctx.lineTo(16, -10);       // Shoulder
-            ctx.lineTo(24, 6);         // Upper mandible
-            ctx.lineTo(18, 20);        // Engine boom
-            ctx.lineTo(6, 14);         // Reactor recess
-            ctx.lineTo(0, 18);         // Tail center
+            ctx.moveTo(0, -22);
+            ctx.lineTo(16, -10);
+            ctx.lineTo(24, 6);
+            ctx.lineTo(18, 20);
+            ctx.lineTo(6, 14);
+            ctx.lineTo(0, 18);
             ctx.lineTo(-6, 14);
             ctx.lineTo(-18, 20);
             ctx.lineTo(-24, 6);
@@ -973,7 +971,6 @@ class Enemy {
             ctx.fill();
             ctx.stroke();
 
-            // Bridge Sensor Array
             ctx.fillStyle = '#00f0ff';
             ctx.shadowColor = '#00f0ff';
             ctx.shadowBlur = 8;
@@ -981,13 +978,11 @@ class Enemy {
             ctx.arc(0, -2, 5, 0, Math.PI * 2);
             ctx.fill();
 
-            // Heavy Dual Engine Exhaust
             ctx.fillStyle = '#ff7700';
             ctx.fillRect(-14, 16, 4, 4);
             ctx.fillRect(10, 16, 4, 4);
         }
         else if (this.type === 'STRIKER') {
-            // 🔴 CRIMSON ASSAULT HORNET (Heavy Gunship with Swept Wings)
             const hullGrad = ctx.createLinearGradient(-20, 0, 20, 0);
             hullGrad.addColorStop(0, '#3a0010');
             hullGrad.addColorStop(0.4, '#ff1a4a');
@@ -1001,13 +996,12 @@ class Enemy {
             ctx.shadowColor = '#ff3366';
             ctx.shadowBlur = 8;
 
-            // Forward-Swept Wings Geometry
             ctx.beginPath();
-            ctx.moveTo(0, 18);         // Forward strike nose
-            ctx.lineTo(20, -10);       // Wingtip right
-            ctx.lineTo(16, -16);       // Aileron
-            ctx.lineTo(6, -10);        // Intake
-            ctx.lineTo(0, -18);        // Tail fin
+            ctx.moveTo(0, 18);
+            ctx.lineTo(20, -10);
+            ctx.lineTo(16, -16);
+            ctx.lineTo(6, -10);
+            ctx.lineTo(0, -18);
             ctx.lineTo(-6, -10);
             ctx.lineTo(-16, -16);
             ctx.lineTo(-20, -10);
@@ -1015,19 +1009,16 @@ class Enemy {
             ctx.fill();
             ctx.stroke();
 
-            // Wing Cannon Hardpoints
             ctx.fillStyle = '#111111';
             ctx.fillRect(16, -6, 3, 10);
             ctx.fillRect(-19, -6, 3, 10);
 
-            // Cockpit Window Inset
             ctx.fillStyle = '#ffea00';
             ctx.beginPath();
             ctx.ellipse(0, 4, 3, 7, 0, 0, Math.PI * 2);
             ctx.fill();
         }
         else if (this.type === 'INTERCEPTOR') {
-            // 💠 TWIN-BOOM SPACE INTERCEPTOR (Cyan / Lightning Fast)
             const hullGrad = ctx.createLinearGradient(-18, 0, 18, 0);
             hullGrad.addColorStop(0, '#002b3d');
             hullGrad.addColorStop(0.5, '#00ffcc');
@@ -1039,31 +1030,28 @@ class Enemy {
             ctx.shadowColor = '#00ffcc';
             ctx.shadowBlur = 8;
 
-            // Twin Boom Fuselage
             ctx.beginPath();
-            ctx.moveTo(0, 16);         // Central Cockpit Nose
+            ctx.moveTo(0, 16);
             ctx.lineTo(6, 4);
-            ctx.lineTo(16, 2);         // Right Boom Nose
-            ctx.lineTo(16, -14);       // Right Engine
+            ctx.lineTo(16, 2);
+            ctx.lineTo(16, -14);
             ctx.lineTo(10, -14);
-            ctx.lineTo(8, -6);         // Wing connector
-            ctx.lineTo(0, -10);        // Central Tail
+            ctx.lineTo(8, -6);
+            ctx.lineTo(0, -10);
             ctx.lineTo(-8, -6);
             ctx.lineTo(-10, -14);
-            ctx.lineTo(-16, -14);      // Left Engine
-            ctx.lineTo(-16, 2);        // Left Boom Nose
+            ctx.lineTo(-16, -14);
+            ctx.lineTo(-16, 2);
             ctx.lineTo(-6, 4);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            // Dual Thruster Glows
             ctx.fillStyle = '#00f0ff';
             ctx.fillRect(11, -16, 4, 3);
             ctx.fillRect(-15, -16, 4, 3);
         }
         else if (this.type === 'SNIPER') {
-            // 🔶 RAILGUN STRIKE FIGHTER (Long Barrel with Power Coils)
             const hullGrad = ctx.createLinearGradient(-16, 0, 16, 0);
             hullGrad.addColorStop(0, '#4a2500');
             hullGrad.addColorStop(0.5, '#ff8800');
@@ -1075,29 +1063,26 @@ class Enemy {
             ctx.shadowColor = '#ff8800';
             ctx.shadowBlur = 8;
 
-            // Extended Needle Railgun
             ctx.beginPath();
-            ctx.moveTo(0, 24);         // Railgun Tip
+            ctx.moveTo(0, 24);
             ctx.lineTo(3, 4);
-            ctx.lineTo(16, -10);       // Right Canard
+            ctx.lineTo(16, -10);
             ctx.lineTo(12, -16);
             ctx.lineTo(4, -10);
-            ctx.lineTo(0, -14);        // Tail
+            ctx.lineTo(0, -14);
             ctx.lineTo(-4, -10);
             ctx.lineTo(-12, -16);
-            ctx.lineTo(-16, -10);      // Left Canard
+            ctx.lineTo(-16, -10);
             ctx.lineTo(-3, 4);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            // Electromagnetic Coils along barrel
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(-2, 10, 4, 2);
             ctx.fillRect(-2, 16, 4, 2);
         }
         else if (this.type === 'MINELAYER') {
-            // 🟣 ARMORED ORDNANCE CRUISER (Heavy Hexagon with Spikes)
             const hullGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, 18);
             hullGrad.addColorStop(0, '#ffffff');
             hullGrad.addColorStop(0.4, '#e000ff');
@@ -1109,7 +1094,6 @@ class Enemy {
             ctx.shadowColor = '#e000ff';
             ctx.shadowBlur = 10;
 
-            // Armored Hexagon
             ctx.beginPath();
             for (let i = 0; i < 6; i++) {
                 const a = i * (Math.PI / 3);
@@ -1122,7 +1106,6 @@ class Enemy {
             ctx.fill();
             ctx.stroke();
 
-            // Mine Release Ports
             ctx.fillStyle = '#000000';
             ctx.beginPath();
             ctx.arc(0, 0, 7, 0, Math.PI * 2);
@@ -1133,7 +1116,6 @@ class Enemy {
             ctx.fill();
         }
         else if (this.type === 'SPLITTER') {
-            // 🟢 BIO-MECHANICAL ALIEN CARAPACE (Emerald Diamond)
             const hullGrad = ctx.createLinearGradient(-18, 0, 18, 0);
             hullGrad.addColorStop(0, '#0a3805');
             hullGrad.addColorStop(0.5, '#39ff14');
@@ -1154,7 +1136,6 @@ class Enemy {
             ctx.fill();
             ctx.stroke();
 
-            // Organic Splitting Seam
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 1;
             ctx.beginPath();
@@ -1163,7 +1144,6 @@ class Enemy {
             ctx.stroke();
         }
         else if (this.type === 'SENTINEL') {
-            // 🛡️ CYBER SENTINEL (Heavy Shield Fortress)
             const hullGrad = ctx.createLinearGradient(-20, 0, 20, 0);
             hullGrad.addColorStop(0, '#001a33');
             hullGrad.addColorStop(0.5, '#00bfff');
@@ -1186,7 +1166,6 @@ class Enemy {
             ctx.fill();
             ctx.stroke();
 
-            // Rotating Energy Shield Ring
             ctx.strokeStyle = '#00ffff';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -1194,7 +1173,6 @@ class Enemy {
             ctx.stroke();
         }
         else if (this.type === 'WARP_HUNTER') {
-            // 🔮 QUANTUM PHASE FIGHTER (Magenta Variable Geometry)
             const hullGrad = ctx.createLinearGradient(-18, 0, 18, 0);
             hullGrad.addColorStop(0, '#3d0028');
             hullGrad.addColorStop(0.5, '#ff00aa');
@@ -1219,7 +1197,6 @@ class Enemy {
             ctx.fillRect(-2, -2, 4, 8);
         }
         else if (this.type === 'PHANTOM') {
-            // 👤 STEALTH SHROUD GHOST (Obsidian Faceted Jet)
             ctx.fillStyle = 'rgba(25, 10, 45, 0.9)';
             ctx.strokeStyle = '#bf00ff';
             ctx.lineWidth = 1.5;
@@ -1236,7 +1213,6 @@ class Enemy {
             ctx.stroke();
         }
         else {
-            // 🛸 AERO-SCOUT DRONE (Cyan Sleek Delta Fighter)
             const hullGrad = ctx.createLinearGradient(-15, 0, 15, 0);
             hullGrad.addColorStop(0, '#002533');
             hullGrad.addColorStop(0.5, '#00f0ff');
@@ -1258,7 +1234,6 @@ class Enemy {
             ctx.fill();
             ctx.stroke();
 
-            // Cockpit Glint
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
             ctx.ellipse(0, 0, 2.5, 5, 0, 0, Math.PI * 2);
@@ -1267,7 +1242,6 @@ class Enemy {
 
         ctx.restore();
 
-        // Tractor Beam Cone
         if (this.state === 'CAPTURING') {
             ctx.save();
             const beamGrad = ctx.createLinearGradient(this.x, this.y + 15, this.x, this.game.height);
@@ -1287,13 +1261,13 @@ class Enemy {
     }
 }
 
-// --- DESTRUCTIBLE DRIFTING ASTEROIDS (BONGKAHAN ASTEROID PENGGANGGU) ---
+// --- DESTRUCTIBLE DRIFTING ASTEROIDS ---
 class Asteroid {
     constructor(game, x, y, size = 'large', vx = null, vy = null) {
         this.game = game;
         this.x = x;
         this.y = y;
-        this.size = size; // 'large', 'medium', 'small'
+        this.size = size;
         this.isDead = false;
         
         if (size === 'large') {
@@ -1320,19 +1294,17 @@ class Asteroid {
         this.rotation = Math.random() * Math.PI * 2;
         this.rotSpeed = (Math.random() - 0.5) * 0.04;
 
-        // Procedural Jagged Rock Vertices
         this.numVertices = size === 'large' ? 12 : (size === 'medium' ? 10 : 8);
         this.vertices = [];
         for (let i = 0; i < this.numVertices; i++) {
             const angle = (i / this.numVertices) * Math.PI * 2;
-            const variance = 0.75 + Math.random() * 0.5; // 75% to 125% radius
+            const variance = 0.75 + Math.random() * 0.5;
             this.vertices.push({
                 x: Math.cos(angle) * this.radius * variance,
                 y: Math.sin(angle) * this.radius * variance
             });
         }
 
-        // Procedural Craters
         this.craters = [];
         const numCraters = size === 'large' ? 3 : (size === 'medium' ? 2 : 1);
         for (let i = 0; i < numCraters; i++) {
@@ -1348,7 +1320,11 @@ class Asteroid {
 
     takeDamage(amount) {
         this.hp -= amount;
-        this.game.particles.spawnRockDust(this.x, this.y, 4);
+        if (this.game.particles && this.game.particles.spawnRockDust) {
+            this.game.particles.spawnRockDust(this.x, this.y, 4);
+        } else if (this.game.particles) {
+            this.game.particles.spawnExplosion(this.x, this.y, '#8c7e72', 5, 0.4);
+        }
         window.audio.playHit();
 
         if (this.hp <= 0) {
@@ -1359,12 +1335,15 @@ class Asteroid {
 
     destroy() {
         this.isDead = true;
-        this.game.particles.spawnExplosion(this.x, this.y, '#8c7e72', 15, 0.8);
-        this.game.particles.spawnRockDust(this.x, this.y, 12);
+        if (this.game.particles) {
+            this.game.particles.spawnExplosion(this.x, this.y, '#8c7e72', 15, 0.8);
+            if (this.game.particles.spawnRockDust) {
+                this.game.particles.spawnRockDust(this.x, this.y, 12);
+            }
+        }
         window.audio.playExplosion('small');
         this.game.addScore(this.scoreValue, this.x, this.y);
 
-        // Split into smaller sub-asteroids
         if (this.size === 'large') {
             for (let i = -1; i <= 1; i += 2) {
                 const sub = new Asteroid(this.game, this.x + i * 15, this.y, 'medium', this.vx + i * 0.8, this.vy * 1.2);
@@ -1377,7 +1356,6 @@ class Asteroid {
             }
         }
 
-        // Powerup drop chance
         if (Math.random() < 0.10 && this.size !== 'small') {
             const types = ['DUAL', 'SPREAD', 'LASER', 'SHIELD', 'BOMB', 'HEAL'];
             const chosen = types[Math.floor(Math.random() * types.length)];
@@ -1402,7 +1380,6 @@ class Asteroid {
         ctx.translate(this.x, this.y);
         ctx.rotate(this.rotation);
 
-        // 3D Spherical Rocky Gradient
         const rockGrad = ctx.createRadialGradient(-this.radius * 0.35, -this.radius * 0.35, 2, 0, 0, this.radius);
         rockGrad.addColorStop(0, '#d1c2b4');
         rockGrad.addColorStop(0.4, '#8a7868');
@@ -1413,7 +1390,6 @@ class Asteroid {
         ctx.strokeStyle = '#a69280';
         ctx.lineWidth = 1.5;
 
-        // Jagged Polygon Outline
         ctx.beginPath();
         for (let i = 0; i < this.vertices.length; i++) {
             const v = this.vertices[i];
@@ -1424,7 +1400,6 @@ class Asteroid {
         ctx.fill();
         ctx.stroke();
 
-        // Shaded Craters
         for (let c of this.craters) {
             ctx.fillStyle = 'rgba(25, 18, 12, 0.6)';
             ctx.strokeStyle = 'rgba(210, 195, 180, 0.4)';

@@ -5,9 +5,13 @@
     padding: 0;
     box-sizing: border-box;
     user-select: none;
+    -webkit-user-select: none;
 }
 
-body {
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
     background: radial-gradient(circle at center, #0e1026 0%, #050610 100%);
     color: #ffffff;
     font-family: 'Rajdhani', sans-serif;
@@ -15,8 +19,18 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 100vh;
-    overflow: hidden;
+    touch-action: manipulation;
+}
+
+/* Responsive Container */
+.main-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding: 6px;
 }
 
 /* Header & Controls Bar */
@@ -25,20 +39,21 @@ body {
     justify-content: space-between;
     align-items: center;
     width: 800px;
-    max-width: 95vw;
-    margin-bottom: 8px;
+    max-width: 96vw;
+    margin-bottom: 6px;
     padding: 6px 14px;
-    background: rgba(14, 18, 38, 0.85);
-    border: 1px solid rgba(0, 240, 255, 0.3);
+    background: rgba(14, 18, 38, 0.88);
+    border: 1px solid rgba(0, 240, 255, 0.35);
     border-radius: 8px;
     box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
     backdrop-filter: blur(8px);
+    z-index: 50;
 }
 
 .logo {
     font-family: 'Orbitron', sans-serif;
     font-weight: 900;
-    font-size: 1.3rem;
+    font-size: 1.25rem;
     color: #00f0ff;
     text-shadow: 0 0 10px #00f0ff, 0 0 20px #ff0077;
     letter-spacing: 2px;
@@ -47,13 +62,14 @@ body {
 .btn-group {
     display: flex;
     gap: 8px;
+    flex-wrap: wrap;
 }
 
 .cyber-btn {
     font-family: 'Orbitron', sans-serif;
     font-size: 0.75rem;
     font-weight: 700;
-    padding: 6px 14px;
+    padding: 6px 12px;
     background: linear-gradient(135deg, #121838, #1f2a5c);
     color: #00f0ff;
     border: 1px solid #00f0ff;
@@ -62,6 +78,7 @@ body {
     box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
     transition: all 0.2s ease;
     letter-spacing: 1px;
+    white-space: nowrap;
 }
 
 .cyber-btn:hover {
@@ -99,18 +116,20 @@ body {
     box-shadow: 0 0 20px #ff3366;
 }
 
-/* Game Canvas Wrapper */
+/* Game Canvas Wrapper (Responsive Aspect Ratio 8:7) */
 .game-wrapper {
     position: relative;
     width: 800px;
     height: 700px;
-    max-width: 95vw;
-    max-height: 85vh;
+    max-width: 96vw;
+    max-height: calc(100vh - 75px);
+    aspect-ratio: 8 / 7;
     border: 2px solid #00f0ff;
     border-radius: 12px;
     box-shadow: 0 0 30px rgba(0, 240, 255, 0.25), inset 0 0 15px rgba(0, 240, 255, 0.15);
     background: #050512;
     overflow: hidden;
+    touch-action: none;
 }
 
 #gameCanvas {
@@ -118,6 +137,7 @@ body {
     height: 100%;
     display: block;
     cursor: crosshair;
+    touch-action: none;
 }
 
 /* Modals & Overlays */
@@ -127,7 +147,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(5, 7, 20, 0.88);
+    background: rgba(5, 7, 20, 0.90);
     backdrop-filter: blur(6px);
     display: flex;
     flex-direction: column;
@@ -135,22 +155,22 @@ body {
     justify-content: center;
     z-index: 100;
     text-align: center;
-    padding: 24px;
+    padding: 16px;
 }
 
 .modal-content {
-    background: linear-gradient(180deg, rgba(16, 22, 50, 0.95), rgba(8, 10, 28, 0.95));
+    background: linear-gradient(180deg, rgba(16, 22, 50, 0.96), rgba(8, 10, 28, 0.96));
     border: 2px solid #00f0ff;
     border-radius: 12px;
-    padding: 32px 40px;
+    padding: 24px 32px;
     box-shadow: 0 0 35px rgba(0, 240, 255, 0.4);
     max-width: 520px;
-    width: 90%;
+    width: 92%;
 }
 
 .title-main {
     font-family: 'Orbitron', sans-serif;
-    font-size: 2.2rem;
+    font-size: clamp(1.6rem, 4vw, 2.3rem);
     font-weight: 900;
     color: #ffffff;
     text-shadow: 0 0 10px #00f0ff, 0 0 25px #ff0077;
@@ -159,37 +179,37 @@ body {
 }
 
 .title-sub {
-    font-size: 0.9rem;
+    font-size: clamp(0.75rem, 2vw, 0.9rem);
     color: #ff0077;
     font-weight: 700;
     letter-spacing: 1.5px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .instructions {
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.45);
     border: 1px solid rgba(0, 240, 255, 0.2);
     border-radius: 8px;
-    padding: 14px 18px;
-    margin-bottom: 22px;
-    font-size: 0.95rem;
-    line-height: 1.5;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    font-size: clamp(0.8rem, 2vw, 0.95rem);
+    line-height: 1.4;
     text-align: left;
 }
 
 .instructions h4 {
     font-family: 'Orbitron', sans-serif;
     color: #ffea00;
-    font-size: 0.85rem;
-    margin-bottom: 8px;
+    font-size: 0.82rem;
+    margin-bottom: 6px;
     text-align: center;
 }
 
 .instruction-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 6px;
+    gap: 8px;
+    margin-bottom: 5px;
     color: #e0e8ff;
 }
 
@@ -197,18 +217,19 @@ body {
     background: #00f0ff;
     color: #000;
     font-weight: 700;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     padding: 2px 6px;
     border-radius: 4px;
-    min-width: 75px;
+    min-width: 65px;
     text-align: center;
+    white-space: nowrap;
 }
 
 .play-btn {
     font-family: 'Orbitron', sans-serif;
-    font-size: 1rem;
+    font-size: clamp(0.85rem, 2.5vw, 1.05rem);
     font-weight: 900;
-    padding: 12px 32px;
+    padding: 10px 28px;
     background: linear-gradient(135deg, #00f0ff, #ff0077);
     color: #ffffff;
     border: none;
@@ -236,13 +257,31 @@ body {
 
 .modal-stat {
     font-family: 'Orbitron', sans-serif;
-    font-size: 1.3rem;
+    font-size: 1.25rem;
     color: #ffea00;
-    margin: 10px 0;
+    margin: 8px 0;
     text-shadow: 0 0 10px rgba(255, 234, 0, 0.5);
 }
 
 .victory-title {
     color: #ffea00;
     text-shadow: 0 0 15px #ffea00, 0 0 30px #ff0077;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 600px) {
+    .top-nav {
+        padding: 4px 8px;
+    }
+    .logo {
+        font-size: 0.95rem;
+        letter-spacing: 1px;
+    }
+    .cyber-btn {
+        font-size: 0.65rem;
+        padding: 4px 8px;
+    }
+    .modal-content {
+        padding: 18px 20px;
+    }
 }
