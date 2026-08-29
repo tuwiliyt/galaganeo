@@ -1,7 +1,7 @@
-// 3 Unique Boss Encounters - Balanced, Highly Telegraphed & Dynamic
+// High-Fidelity Realistic Boss Flagships (Iron Mantis Mecha, Void Dreadnought Carrier, Omega Core Matrix)
 
 // ==========================================
-// BOSS 1: IRON MANTIS (Level 1 Boss)
+// BOSS 1: IRON MANTIS (Mecha-Insect Dread Cruiser)
 // ==========================================
 class IronMantis {
     constructor(game) {
@@ -108,13 +108,13 @@ class IronMantis {
 
     firePincerSpread() {
         window.audio.playEnemyLaser();
-        const leftX = this.x - 45;
-        const rightX = this.x + 45;
+        const leftX = this.x - 50;
+        const rightX = this.x + 50;
 
         for (let a = -0.3; a <= 0.3; a += 0.2) {
             const spd = 4.5;
-            this.game.enemyBullets.push(new Bullet(leftX, this.y + 20, Math.sin(a) * spd, Math.cos(a) * spd, true, 'orb', 14));
-            this.game.enemyBullets.push(new Bullet(rightX, this.y + 20, Math.sin(a) * spd, Math.cos(a) * spd, true, 'orb', 14));
+            this.game.enemyBullets.push(new Bullet(leftX, this.y + 25, Math.sin(a) * spd, Math.cos(a) * spd, true, 'orb', 14));
+            this.game.enemyBullets.push(new Bullet(rightX, this.y + 25, Math.sin(a) * spd, Math.cos(a) * spd, true, 'orb', 14));
         }
     }
 
@@ -134,55 +134,91 @@ class IronMantis {
 
         const glowColor = this.isEnraged ? '#ff0033' : '#ff7700';
         ctx.shadowColor = glowColor;
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 15;
 
-        ctx.fillStyle = '#1e1f29';
+        // Realistic Heavy Gunship Hull Gradient
+        const hullGrad = ctx.createLinearGradient(-50, 0, 50, 0);
+        hullGrad.addColorStop(0, '#151822');
+        hullGrad.addColorStop(0.3, '#3a4258');
+        hullGrad.addColorStop(0.5, '#7382a8');
+        hullGrad.addColorStop(0.7, '#3a4258');
+        hullGrad.addColorStop(1, '#151822');
+
+        ctx.fillStyle = hullGrad;
         ctx.strokeStyle = glowColor;
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 2.5;
 
+        // Main Heavy Chassis
         ctx.beginPath();
-        ctx.moveTo(0, -30);
-        ctx.lineTo(32, -8);
-        ctx.lineTo(40, 20);
-        ctx.lineTo(0, 42);
-        ctx.lineTo(-40, 20);
-        ctx.lineTo(-32, -8);
+        ctx.moveTo(0, -35);
+        ctx.lineTo(40, -12);
+        ctx.lineTo(55, 15);
+        ctx.lineTo(35, 45);
+        ctx.lineTo(0, 30);
+        ctx.lineTo(-35, 45);
+        ctx.lineTo(-55, 15);
+        ctx.lineTo(-40, -12);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = glowColor;
+        // Armor Plate Insets & Panel Lines
+        ctx.strokeStyle = 'rgba(255, 119, 0, 0.6)';
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.arc(0, 6, 12, 0, Math.PI * 2);
+        ctx.moveTo(-25, -5);
+        ctx.lineTo(-40, 15);
+        ctx.moveTo(25, -5);
+        ctx.lineTo(40, 15);
+        ctx.stroke();
+
+        // Glowing Center Reactor
+        const reactorGrad = ctx.createRadialGradient(0, 6, 2, 0, 6, 16);
+        reactorGrad.addColorStop(0, '#ffffff');
+        reactorGrad.addColorStop(0.5, glowColor);
+        reactorGrad.addColorStop(1, 'rgba(0,0,0,0.5)');
+        ctx.fillStyle = reactorGrad;
+        ctx.beginPath();
+        ctx.arc(0, 6, 14, 0, Math.PI * 2);
         ctx.fill();
 
-        // Pincers
+        // Articulated Titanium Pincers (Left & Right)
         ctx.save();
-        ctx.translate(-45, 0);
+        ctx.translate(-55, 5);
         ctx.rotate(-this.pincerAngle);
-        ctx.fillStyle = '#3a3f58';
+        ctx.fillStyle = '#252a3b';
+        ctx.strokeStyle = glowColor;
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(-25, 18);
-        ctx.lineTo(-8, 42);
-        ctx.lineTo(8, 18);
+        ctx.lineTo(-30, 20);
+        ctx.lineTo(-12, 52);
+        ctx.lineTo(10, 22);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+        // Weapon Pod Nozzle
+        ctx.fillStyle = '#ff7700';
+        ctx.fillRect(-14, 48, 5, 6);
         ctx.restore();
 
         ctx.save();
-        ctx.translate(45, 0);
+        ctx.translate(55, 5);
         ctx.rotate(this.pincerAngle);
-        ctx.fillStyle = '#3a3f58';
+        ctx.fillStyle = '#252a3b';
+        ctx.strokeStyle = glowColor;
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(25, 18);
-        ctx.lineTo(8, 42);
-        ctx.lineTo(-8, 18);
+        ctx.lineTo(30, 20);
+        ctx.lineTo(12, 52);
+        ctx.lineTo(-10, 22);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+        // Weapon Pod Nozzle
+        ctx.fillStyle = '#ff7700';
+        ctx.fillRect(9, 48, 5, 6);
         ctx.restore();
 
         ctx.restore();
@@ -190,7 +226,7 @@ class IronMantis {
 }
 
 // ==========================================
-// BOSS 2: VOID DREADNOUGHT (Rebalanced & Fair!)
+// BOSS 2: VOID DREADNOUGHT (Carrier Flagship)
 // ==========================================
 class VoidDreadnought {
     constructor(game) {
@@ -200,7 +236,7 @@ class VoidDreadnought {
         this.x = game.width / 2;
         this.y = -120;
         this.targetY = 120;
-        this.hp = 1400; // Balanced HP
+        this.hp = 1400;
         this.maxHp = 1400;
         this.isDead = false;
 
@@ -238,14 +274,12 @@ class VoidDreadnought {
         if (s.hp <= 0) {
             s.active = false;
             const curAngle = this.shieldAngle + s.angle;
-            const sx = this.x + Math.cos(curAngle) * 80;
-            const sy = this.y + Math.sin(curAngle) * 60;
+            const sx = this.x + Math.cos(curAngle) * 85;
+            const sy = this.y + Math.sin(curAngle) * 65;
             
             this.game.particles.spawnExplosion(sx, sy, '#00ffff', 25, 1.2);
             window.audio.playExplosion('large');
             this.game.particles.spawnFloatingText("SHIELD BROKEN!", sx, sy - 15, '#00ffff', 18);
-
-            // Drop guaranteed Heal or Shield powerup when a crystal breaks!
             this.game.powerUps.push(new PowerUp(sx, sy, Math.random() < 0.5 ? 'SHIELD' : 'HEAL'));
         }
     }
@@ -281,7 +315,6 @@ class VoidDreadnought {
 
         this.x = this.game.width / 2 + Math.sin(this.attackTimer * 0.018) * (this.game.width * 0.22);
 
-        // Balanced 180 frame attack cycle
         if (this.attackTimer % 180 === 0) {
             const roll = Math.random();
             if (roll < 0.4) {
@@ -322,7 +355,6 @@ class VoidDreadnought {
 
     executeTractorWave() {
         window.audio.playTractorBeam();
-        // Fire 4 slow floating plasma orbs with large gaps
         for (let a = -0.4; a <= 0.4; a += 0.25) {
             this.game.enemyBullets.push(new Bullet(this.x, this.y + 30, Math.sin(a) * 3.8, Math.cos(a) * 3.8, true, 'orb', 15));
         }
@@ -330,7 +362,6 @@ class VoidDreadnought {
 
     fireBroadsideBarrage() {
         window.audio.playEnemyLaser();
-        // 5 slow bullets with wide dodging lanes
         for (let a = -0.5; a <= 0.5; a += 0.25) {
             const spd = 4.2;
             this.game.enemyBullets.push(new Bullet(this.x, this.y + 30, Math.sin(a) * spd, Math.cos(a) * spd, true, 'plasma', 16));
@@ -344,46 +375,56 @@ class VoidDreadnought {
         ctx.translate(this.x, this.y);
 
         ctx.shadowColor = '#b000ff';
-        ctx.shadowBlur = 14;
+        ctx.shadowBlur = 18;
 
-        ctx.fillStyle = '#140c24';
+        // Carrier Battleship Metallic Hull
+        const hullGrad = ctx.createLinearGradient(-80, 0, 80, 0);
+        hullGrad.addColorStop(0, '#100522');
+        hullGrad.addColorStop(0.3, '#33125d');
+        hullGrad.addColorStop(0.5, '#7a32d6');
+        hullGrad.addColorStop(0.7, '#33125d');
+        hullGrad.addColorStop(1, '#100522');
+
+        ctx.fillStyle = hullGrad;
         ctx.strokeStyle = '#b000ff';
         ctx.lineWidth = 3;
 
+        // Realistic Carrier Geometry
         ctx.beginPath();
-        ctx.moveTo(0, -40);
-        ctx.lineTo(55, -12);
-        ctx.lineTo(75, 25);
-        ctx.lineTo(30, 48);
-        ctx.lineTo(0, 35);
-        ctx.lineTo(-30, 48);
-        ctx.lineTo(-75, 25);
-        ctx.lineTo(-55, -12);
+        ctx.moveTo(0, -45);        // Bow
+        ctx.lineTo(60, -18);       // Starboard Armor
+        ctx.lineTo(85, 25);        // Flank
+        ctx.lineTo(40, 52);        // Engine Bay
+        ctx.lineTo(0, 38);         // Hangar Bay
+        ctx.lineTo(-40, 52);
+        ctx.lineTo(-85, 25);
+        ctx.lineTo(-60, -18);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
+        // Hangar Bay Interior Glow
         ctx.fillStyle = '#ff00aa';
         ctx.beginPath();
-        ctx.arc(0, 8, 16, 0, Math.PI * 2);
+        ctx.arc(0, 10, 16, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.restore();
 
-        // Draw Shield Crystals
+        // Orbiting Shield Crystals
         for (let s of this.shields) {
             if (!s.active) continue;
             const curAngle = this.shieldAngle + s.angle;
-            const sx = this.x + Math.cos(curAngle) * 80;
-            const sy = this.y + Math.sin(curAngle) * 60;
+            const sx = this.x + Math.cos(curAngle) * 85;
+            const sy = this.y + Math.sin(curAngle) * 65;
 
             ctx.save();
             ctx.translate(sx, sy);
             ctx.shadowColor = '#00f0ff';
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = 12;
             ctx.fillStyle = '#00f0ff';
             ctx.beginPath();
-            ctx.arc(0, 0, 9, 0, Math.PI * 2);
+            ctx.arc(0, 0, 10, 0, Math.PI * 2);
             ctx.fill();
 
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
@@ -395,7 +436,6 @@ class VoidDreadnought {
             ctx.restore();
         }
 
-        // Draw Tractor Warning Guide Line
         if (this.isTelegraphingTractor && this.tractorWarningTimer < 50) {
             ctx.save();
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)';
@@ -413,7 +453,7 @@ class VoidDreadnought {
 }
 
 // ==========================================
-// BOSS 3: OMEGA CORE MATRIX (Final Boss)
+// BOSS 3: OMEGA CORE MATRIX (Cyber Godhead)
 // ==========================================
 class OmegaCoreMatrix {
     constructor(game) {
@@ -423,7 +463,7 @@ class OmegaCoreMatrix {
         this.x = game.width / 2;
         this.y = -140;
         this.targetY = 130;
-        this.hp = 2600; // Balanced HP
+        this.hp = 2600;
         this.maxHp = 2600;
         this.isDead = false;
 
@@ -483,7 +523,6 @@ class OmegaCoreMatrix {
             this.teleportCooldown = 300;
         }
 
-        // 1. Slower Danmaku Spiral
         if (this.attackTimer % 9 === 0 && !this.isChargingDeathRay) {
             const speed = 4.5;
             const bulletsPerRing = 3;
@@ -493,7 +532,6 @@ class OmegaCoreMatrix {
             }
         }
 
-        // 2. Charging Singularity Death Ray
         if (this.attackTimer % 340 === 0 && !this.isChargingDeathRay) {
             this.isChargingDeathRay = true;
             this.deathRayTimer = 0;
@@ -535,25 +573,31 @@ class OmegaCoreMatrix {
         ctx.translate(this.x, this.y);
 
         ctx.shadowColor = '#ffe600';
-        ctx.shadowBlur = 18;
+        ctx.shadowBlur = 20;
 
+        // Rotating Solar Rings
         ctx.save();
         ctx.rotate(this.matrixRingAngle);
         ctx.strokeStyle = '#00f0ff';
         ctx.lineWidth = 2.5;
-        ctx.strokeRect(-50, -50, 100, 100);
+        ctx.strokeRect(-55, -55, 110, 110);
         ctx.restore();
 
         ctx.save();
         ctx.rotate(-this.matrixRingAngle * 1.5);
         ctx.strokeStyle = '#ff0077';
         ctx.lineWidth = 2.5;
-        ctx.strokeRect(-38, -38, 76, 76);
+        ctx.strokeRect(-42, -42, 84, 84);
         ctx.restore();
 
-        ctx.fillStyle = '#ffe600';
+        // Singularity Sphere
+        const coreGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, 24);
+        coreGrad.addColorStop(0, '#ffffff');
+        coreGrad.addColorStop(0.4, '#ffe600');
+        coreGrad.addColorStop(1, '#ff3300');
+        ctx.fillStyle = coreGrad;
         ctx.beginPath();
-        ctx.arc(0, 0, 22, 0, Math.PI * 2);
+        ctx.arc(0, 0, 24, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.restore();

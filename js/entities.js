@@ -1,4 +1,4 @@
-// Enhanced Game Entities: Dynamic Enemy Silhouettes, NPC Special Abilities, Laser Sight, Warp Dash, and Wave Stat Scaling
+// High-Fidelity Realistic Sci-Fi Spacecraft Renderers & Entity Systems
 
 // --- BULLETS ---
 class Bullet {
@@ -8,7 +8,7 @@ class Bullet {
         this.vx = vx;
         this.vy = vy;
         this.isEnemy = isEnemy;
-        this.type = type; // normal, spread, laser, plasma, missile, orb, sniper, mine, shrapnel
+        this.type = type;
         this.damage = damage;
         this.radius = type === 'laser' ? 4 : (type === 'missile' ? 6 : (type === 'orb' ? 7 : (type === 'mine' ? 10 : 3.5)));
         this.isDead = false;
@@ -27,11 +27,9 @@ class Bullet {
             for (let t of this.trail) t.alpha -= 0.15;
         }
 
-        // Mine detonation after 3 seconds
         if (this.type === 'mine' && this.timer > 180) {
             this.isDead = true;
             if (window.game) {
-                // Detonate into 4 cross-shrapnel
                 for (let a = 0; a < Math.PI * 2; a += Math.PI / 2) {
                     window.game.enemyBullets.push(new Bullet(this.x, this.y, Math.cos(a) * 4, Math.sin(a) * 4, true, 'shrapnel', 15));
                 }
@@ -39,7 +37,6 @@ class Bullet {
             }
         }
 
-        // Offscreen boundary check
         if (this.y < -60 || this.y > 900 || this.x < -60 || this.x > 860) {
             this.isDead = true;
         }
@@ -49,16 +46,15 @@ class Bullet {
         ctx.save();
         if (this.isEnemy) {
             if (this.type === 'orb' || this.type === 'plasma') {
-                ctx.fillStyle = '#ff0055';
+                const grad = ctx.createRadialGradient(this.x, this.y, 1, this.x, this.y, this.radius);
+                grad.addColorStop(0, '#ffffff');
+                grad.addColorStop(0.4, '#ff0055');
+                grad.addColorStop(1, 'rgba(255,0,85,0)');
+                ctx.fillStyle = grad;
                 ctx.shadowColor = '#ff0055';
                 ctx.shadowBlur = 10;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.fillStyle = '#ffffff';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius * 0.4, 0, Math.PI * 2);
                 ctx.fill();
             } else if (this.type === 'sniper') {
                 ctx.strokeStyle = '#ffe600';
@@ -70,15 +66,18 @@ class Bullet {
                 ctx.lineTo(this.x + this.vx * 1.5, this.y + this.vy * 1.5);
                 ctx.stroke();
             } else if (this.type === 'mine') {
-                ctx.fillStyle = '#bf00ff';
+                const grad = ctx.createRadialGradient(this.x, this.y, 2, this.x, this.y, this.radius);
+                grad.addColorStop(0, '#ffffff');
+                grad.addColorStop(0.5, '#bf00ff');
+                grad.addColorStop(1, '#3a0050');
+                ctx.fillStyle = grad;
                 ctx.shadowColor = '#bf00ff';
                 ctx.shadowBlur = 14;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Spikes
-                ctx.strokeStyle = '#ffffff';
+                ctx.strokeStyle = '#e0a0ff';
                 ctx.lineWidth = 2;
                 for (let i = 0; i < 4; i++) {
                     const ang = (Date.now() * 0.005) + i * (Math.PI / 2);
@@ -95,7 +94,7 @@ class Bullet {
                 ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
                 ctx.fill();
             } else {
-                ctx.fillStyle = '#ff4400';
+                ctx.fillStyle = '#ff5500';
                 ctx.shadowColor = '#ff5500';
                 ctx.shadowBlur = 6;
                 ctx.beginPath();
@@ -103,7 +102,6 @@ class Bullet {
                 ctx.fill();
             }
         } else {
-            // Player Bullets
             if (this.type === 'laser') {
                 ctx.strokeStyle = '#00ffff';
                 ctx.shadowColor = '#00ffff';
@@ -204,7 +202,7 @@ class PowerUp {
     }
 }
 
-// --- PLAYER SHIP ---
+// --- PLAYER SHIP: AERO-VIPER STEALTH FIGHTER ---
 class Player {
     constructor(game) {
         this.game = game;
@@ -213,8 +211,8 @@ class Player {
         this.targetX = this.x;
         this.targetY = this.y;
         
-        this.width = 36;
-        this.height = 42;
+        this.width = 38;
+        this.height = 46;
         this.radius = 18;
 
         this.lives = 3;
@@ -416,10 +414,10 @@ class Player {
         this.y = Math.max(50, Math.min(this.game.height - 35, this.y));
 
         if (this.isDualFighter) {
-            this.game.particles.spawnThruster(this.x - 18, this.y + 18, '#00f0ff', true);
-            this.game.particles.spawnThruster(this.x + 18, this.y + 18, '#00f0ff', true);
+            this.game.particles.spawnThruster(this.x - 18, this.y + 20, '#00f0ff', true);
+            this.game.particles.spawnThruster(this.x + 18, this.y + 20, '#00f0ff', true);
         } else {
-            this.game.particles.spawnThruster(this.x, this.y + 18, '#00f0ff', false);
+            this.game.particles.spawnThruster(this.x, this.y + 20, '#00f0ff', false);
         }
 
         if (this.fireCooldown > 0) this.fireCooldown--;
@@ -479,52 +477,90 @@ class Player {
             ctx.globalAlpha = 0.4;
         }
 
+        // 1. Aerodynamic Wings with Metallic Gradient
+        const wingGrad = ctx.createLinearGradient(-22, 0, 22, 0);
+        wingGrad.addColorStop(0, '#10223d');
+        wingGrad.addColorStop(0.3, '#d8e6f8');
+        wingGrad.addColorStop(0.5, '#ffffff');
+        wingGrad.addColorStop(0.7, '#d8e6f8');
+        wingGrad.addColorStop(1, '#10223d');
+
+        ctx.fillStyle = wingGrad;
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = 1.5;
+
+        // Main Swept Wing Geometry
+        ctx.beginPath();
+        ctx.moveTo(0, -24);        // Nose
+        ctx.lineTo(8, -6);         // Canard transition
+        ctx.lineTo(22, 12);        // Right wingtip
+        ctx.lineTo(18, 18);        // Right trailing edge
+        ctx.lineTo(6, 14);         // Engine nacelle right
+        ctx.lineTo(0, 20);         // Center tail
+        ctx.lineTo(-6, 14);        // Engine nacelle left
+        ctx.lineTo(-18, 18);       // Left trailing edge
+        ctx.lineTo(-22, 12);       // Left wingtip
+        ctx.lineTo(-8, -6);        // Canard transition left
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 2. Armor Panel Lines & Insets
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.7)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-6, -4);
+        ctx.lineTo(-16, 10);
+        ctx.moveTo(6, -4);
+        ctx.lineTo(16, 10);
+        ctx.stroke();
+
+        // 3. Realistic Cockpit Canopy (Tinted Glass with Light Glint)
+        const canopyGrad = ctx.createLinearGradient(0, -12, 0, 4);
+        canopyGrad.addColorStop(0, '#00ffff');
+        canopyGrad.addColorStop(0.4, '#003366');
+        canopyGrad.addColorStop(0.8, '#ff0077');
+        canopyGrad.addColorStop(1, '#000022');
+
+        ctx.fillStyle = canopyGrad;
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.ellipse(0, -2, 4, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Canopy Glint Highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.beginPath();
+        ctx.ellipse(-1.5, -5, 1.5, 4, -0.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 4. Twin Vectoring Engine Nozzles with Blue Heat Glow
+        ctx.fillStyle = '#00f0ff';
         ctx.shadowColor = '#00f0ff';
         ctx.shadowBlur = 10;
+        ctx.fillRect(-6, 15, 3.5, 4);
+        ctx.fillRect(2.5, 15, 3.5, 4);
 
-        ctx.fillStyle = '#eef5fc';
+        // Wingtip Navigation Strobe Lights (Port Red, Starboard Green)
+        ctx.fillStyle = '#39ff14'; // Green right
         ctx.beginPath();
-        ctx.moveTo(0, -22);
-        ctx.lineTo(8, -4);
-        ctx.lineTo(18, 12);
-        ctx.lineTo(14, 18);
-        ctx.lineTo(4, 14);
-        ctx.lineTo(0, 18);
-        ctx.lineTo(-4, 14);
-        ctx.lineTo(-14, 18);
-        ctx.lineTo(-18, 12);
-        ctx.lineTo(-8, -4);
-        ctx.closePath();
+        ctx.arc(21, 12, 2, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = '#00f0ff';
+        ctx.fillStyle = '#ff0033'; // Red left
         ctx.beginPath();
-        ctx.moveTo(0, -16);
-        ctx.lineTo(5, -2);
-        ctx.lineTo(16, 10);
-        ctx.lineTo(12, 14);
-        ctx.lineTo(3, 8);
-        ctx.lineTo(-3, 8);
-        ctx.lineTo(-12, 14);
-        ctx.lineTo(-16, 10);
-        ctx.lineTo(-5, -2);
-        ctx.closePath();
+        ctx.arc(-21, 12, 2, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = '#ff0077';
-        ctx.shadowColor = '#ff0077';
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.ellipse(0, -2, 3.5, 7, 0, 0, Math.PI * 2);
-        ctx.fill();
-
+        // Shield Bubble
         if (this.shield > 0) {
             ctx.strokeStyle = `rgba(0, 240, 255, ${0.3 + (this.shield / this.maxShield) * 0.5})`;
             ctx.shadowColor = '#00f0ff';
             ctx.shadowBlur = 14;
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.arc(0, 0, 26, 0, Math.PI * 2);
+            ctx.arc(0, 0, 28, 0, Math.PI * 2);
             ctx.stroke();
         }
 
@@ -571,11 +607,11 @@ class Player {
     }
 }
 
-// --- DISTINCT ENEMY CLASSES WITH UNIQUE NPC ABILITIES & SCALING ---
+// --- REALISTIC ALIEN SPACECRAFT WITH METALLIC GRADIENTS & DETAILED PANELS ---
 class Enemy {
     constructor(game, type, gridX, gridY, entryPath = null) {
         this.game = game;
-        this.type = type; // DRONE, INTERCEPTOR, STRIKER, SNIPER, MINELAYER, COMMANDER, PHANTOM, SPLITTER, SENTINEL, WARP_HUNTER
+        this.type = type;
         this.gridTarget = { x: gridX, y: gridY };
         this.x = entryPath ? entryPath[0].x : gridX;
         this.y = entryPath ? entryPath[0].y : gridY;
@@ -595,7 +631,6 @@ class Enemy {
         this.speed = 4 * speedMult;
         this.isDead = false;
 
-        // Ability timers
         this.sniperAimTimer = 0;
         this.isAimingSniper = false;
         this.sniperTarget = { x: 0, y: 0 };
@@ -604,7 +639,6 @@ class Enemy {
         this.warpCooldown = 0;
         this.animTick = Math.random() * 100;
 
-        // Base attributes scaled by wave
         switch (type) {
             case 'COMMANDER':
                 this.hp = Math.round(75 * statMult);
@@ -617,13 +651,13 @@ class Enemy {
                 this.hp = Math.round(40 * statMult);
                 this.scoreValue = 250;
                 this.color = '#ff3366';
-                this.radius = 17;
+                this.radius = 18;
                 break;
             case 'INTERCEPTOR':
                 this.hp = Math.round(28 * statMult);
                 this.scoreValue = 250;
                 this.color = '#00ffcc';
-                this.radius = 15;
+                this.radius = 16;
                 this.speed = 5.5 * speedMult;
                 break;
             case 'SNIPER':
@@ -648,34 +682,33 @@ class Enemy {
                 this.hp = Math.round(60 * statMult);
                 this.scoreValue = 320;
                 this.color = '#e000ff';
-                this.radius = 19;
+                this.radius = 20;
                 break;
             case 'SENTINEL':
                 this.hp = Math.round(85 * statMult);
                 this.scoreValue = 450;
                 this.color = '#00bfff';
-                this.radius = 21;
+                this.radius = 22;
                 this.shieldAngle = 0;
                 break;
             case 'WARP_HUNTER':
                 this.hp = Math.round(45 * statMult);
                 this.scoreValue = 400;
                 this.color = '#ff00aa';
-                this.radius = 17;
+                this.radius = 18;
                 this.speed = 5.0 * speedMult;
                 break;
             default: // DRONE
                 this.hp = Math.round(22 * statMult);
                 this.scoreValue = 120;
                 this.color = '#00f0ff';
-                this.radius = 14;
+                this.radius = 15;
                 break;
         }
         this.maxHp = this.hp;
     }
 
     takeDamage(amount) {
-        // Warp Hunter reaction: 30% chance to warp away if damaged
         if (this.type === 'WARP_HUNTER' && Math.random() < 0.35 && this.warpCooldown <= 0) {
             this.warpDash();
             return;
@@ -705,7 +738,6 @@ class Enemy {
         window.audio.playExplosion('medium');
         this.game.addScore(this.scoreValue, this.x, this.y);
 
-        // Splitter behavior: Splits into 2 mini drones
         if (this.type === 'SPLITTER') {
             for (let i = -1; i <= 1; i += 2) {
                 const subDrone = new Enemy(this.game, 'DRONE', this.x + i * 20, this.y);
@@ -716,7 +748,6 @@ class Enemy {
             this.game.particles.spawnFloatingText("SPLIT!", this.x, this.y - 20, '#39ff14', 16);
         }
 
-        // Power-up Drop Chance
         if (Math.random() < 0.14) {
             const types = ['DUAL', 'SPREAD', 'LASER', 'SHIELD', 'BOMB', 'DRONE', 'HEAL'];
             if (Math.random() < 0.08) types.push('1UP');
@@ -731,25 +762,21 @@ class Enemy {
 
         if (this.warpCooldown > 0) this.warpCooldown--;
 
-        // Phantom Cloak Animation
         if (this.type === 'PHANTOM') {
             this.cloakTimer++;
             this.cloakAlpha = 0.25 + 0.75 * Math.abs(Math.sin(this.cloakTimer * 0.04));
         }
 
-        // Sentinel Shield Rotation
         if (this.type === 'SENTINEL') {
             this.shieldAngle += 0.04;
         }
 
-        // Sniper Laser Aiming Ability
         if (this.type === 'SNIPER' && this.isAimingSniper) {
             this.sniperAimTimer++;
             this.sniperTarget.x = this.game.player.x;
             this.sniperTarget.y = this.game.player.y;
 
             if (this.sniperAimTimer >= 40) {
-                // Fire powerful sniper railgun!
                 this.isAimingSniper = false;
                 this.sniperAimTimer = 0;
                 window.audio.playLaser('laser');
@@ -758,7 +785,6 @@ class Enemy {
             }
         }
 
-        // 1. ENTERING STATE
         if (this.state === 'ENTERING') {
             if (this.entryPath && this.pathIndex < this.entryPath.length - 1) {
                 const targetPoint = this.entryPath[this.pathIndex + 1];
@@ -778,8 +804,6 @@ class Enemy {
                 this.state = 'IN_FORMATION';
             }
         }
-
-        // 2. IN FORMATION STATE
         else if (this.state === 'IN_FORMATION') {
             const waveOffset = Math.sin(this.game.waveTick * 0.03 + this.gridTarget.x * 0.02) * 12;
             const targetX = this.gridTarget.x + waveOffset;
@@ -794,8 +818,6 @@ class Enemy {
                 this.startDive();
             }
         }
-
-        // 3. DIVING STATE
         else if (this.state === 'DIVING') {
             this.y += this.speed * 1.15;
             this.x += Math.sin(this.y * 0.025) * 3.8;
@@ -813,8 +835,6 @@ class Enemy {
                 this.diveTimer = Math.random() * 350 + 180;
             }
         }
-
-        // 4. CAPTURING STATE (COMMANDER TRACTOR BEAM)
         else if (this.state === 'CAPTURING') {
             this.tractorBeamTimer++;
             window.audio.playTractorBeam();
@@ -883,7 +903,7 @@ class Enemy {
     draw(ctx) {
         if (this.isDead) return;
 
-        // Draw Sniper Laser Sight Telegraph
+        // Sniper Laser Sight Line
         if (this.type === 'SNIPER' && this.isAimingSniper) {
             ctx.save();
             ctx.strokeStyle = `rgba(255, 60, 0, ${0.3 + (this.sniperAimTimer / 40) * 0.7})`;
@@ -894,7 +914,6 @@ class Enemy {
             ctx.lineTo(this.sniperTarget.x, this.sniperTarget.y);
             ctx.stroke();
 
-            // Red Aim Dot
             ctx.fillStyle = '#ff0033';
             ctx.shadowColor = '#ff0033';
             ctx.shadowBlur = 8;
@@ -912,108 +931,185 @@ class Enemy {
             ctx.globalAlpha = this.cloakAlpha;
         }
 
-        // Elite Wave Aura (Waves 7+)
+        // Elite Aura
         if (this.game.waveManager.currentWave >= 7) {
             ctx.strokeStyle = 'rgba(255, 0, 85, 0.5)';
             ctx.lineWidth = 1.5;
             ctx.beginPath();
-            ctx.arc(0, 0, this.radius + 3, 0, Math.PI * 2);
+            ctx.arc(0, 0, this.radius + 4, 0, Math.PI * 2);
             ctx.stroke();
         }
 
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = 10;
-        ctx.fillStyle = this.color;
-
-        // --- UNIQUE SILHOUETTES FOR EVERY ENEMY TYPE ---
+        // --- DETAILED REALISTIC SPACECRAFT VECTOR DRAWINGS ---
+        
         if (this.type === 'COMMANDER') {
-            // Golden Galaga Titan Beetle
+            // 👑 TITAN COMMAND CRUISER (Gold / Heavy Composite Armor)
+            const hullGrad = ctx.createLinearGradient(-24, 0, 24, 0);
+            hullGrad.addColorStop(0, '#553300');
+            hullGrad.addColorStop(0.3, '#ffcc00');
+            hullGrad.addColorStop(0.5, '#ffffff');
+            hullGrad.addColorStop(0.7, '#ffcc00');
+            hullGrad.addColorStop(1, '#553300');
+
+            ctx.fillStyle = hullGrad;
+            ctx.strokeStyle = '#ffe600';
+            ctx.lineWidth = 1.5;
+            ctx.shadowColor = '#ffea00';
+            ctx.shadowBlur = 10;
+
+            // Main Heavy Command Fuselage
             ctx.beginPath();
-            ctx.moveTo(0, -22);
-            ctx.lineTo(16, -10);
-            ctx.lineTo(22, 6);
-            ctx.lineTo(12, 18);
-            ctx.lineTo(0, 12);
-            ctx.lineTo(-12, 18);
-            ctx.lineTo(-22, 6);
+            ctx.moveTo(0, -22);        // Prow
+            ctx.lineTo(16, -10);       // Shoulder
+            ctx.lineTo(24, 6);         // Upper mandible
+            ctx.lineTo(18, 20);        // Engine boom
+            ctx.lineTo(6, 14);         // Reactor recess
+            ctx.lineTo(0, 18);         // Tail center
+            ctx.lineTo(-6, 14);
+            ctx.lineTo(-18, 20);
+            ctx.lineTo(-24, 6);
             ctx.lineTo(-16, -10);
             ctx.closePath();
             ctx.fill();
+            ctx.stroke();
 
-            // Pulsing blue core
+            // Bridge Sensor Array
             ctx.fillStyle = '#00f0ff';
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 8;
             ctx.beginPath();
-            ctx.arc(0, 0, 6, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (this.type === 'STRIKER') {
-            // Crimson Heavy Interceptor with twin swept wings
-            ctx.beginPath();
-            ctx.moveTo(0, 18);
-            ctx.lineTo(18, -12);
-            ctx.lineTo(8, -8);
-            ctx.lineTo(0, -18);
-            ctx.lineTo(-8, -8);
-            ctx.lineTo(-18, -12);
-            ctx.closePath();
+            ctx.arc(0, -2, 5, 0, Math.PI * 2);
             ctx.fill();
 
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(-2, -6, 4, 12);
-        } else if (this.type === 'INTERCEPTOR') {
-            // Cyan Dual-Fuselage Speedster
+            // Heavy Dual Engine Exhaust
+            ctx.fillStyle = '#ff7700';
+            ctx.fillRect(-14, 16, 4, 4);
+            ctx.fillRect(10, 16, 4, 4);
+        }
+        else if (this.type === 'STRIKER') {
+            // 🔴 CRIMSON ASSAULT HORNET (Heavy Gunship with Swept Wings)
+            const hullGrad = ctx.createLinearGradient(-20, 0, 20, 0);
+            hullGrad.addColorStop(0, '#3a0010');
+            hullGrad.addColorStop(0.4, '#ff1a4a');
+            hullGrad.addColorStop(0.5, '#ffffff');
+            hullGrad.addColorStop(0.6, '#ff1a4a');
+            hullGrad.addColorStop(1, '#3a0010');
+
+            ctx.fillStyle = hullGrad;
+            ctx.strokeStyle = '#ff3366';
+            ctx.lineWidth = 1.5;
+            ctx.shadowColor = '#ff3366';
+            ctx.shadowBlur = 8;
+
+            // Forward-Swept Wings Geometry
             ctx.beginPath();
-            ctx.moveTo(0, 16);
-            ctx.lineTo(14, 0);
-            ctx.lineTo(14, -14);
-            ctx.lineTo(4, -8);
-            ctx.lineTo(0, -14);
-            ctx.lineTo(-4, -8);
-            ctx.lineTo(-14, -14);
-            ctx.lineTo(-14, 0);
+            ctx.moveTo(0, 18);         // Forward strike nose
+            ctx.lineTo(20, -10);       // Wingtip right
+            ctx.lineTo(16, -16);       // Aileron
+            ctx.lineTo(6, -10);        // Intake
+            ctx.lineTo(0, -18);        // Tail fin
+            ctx.lineTo(-6, -10);
+            ctx.lineTo(-16, -16);
+            ctx.lineTo(-20, -10);
             ctx.closePath();
             ctx.fill();
-        } else if (this.type === 'SNIPER') {
-            // Long Railgun Silhouette
+            ctx.stroke();
+
+            // Wing Cannon Hardpoints
+            ctx.fillStyle = '#111111';
+            ctx.fillRect(16, -6, 3, 10);
+            ctx.fillRect(-19, -6, 3, 10);
+
+            // Cockpit Window Inset
+            ctx.fillStyle = '#ffea00';
             ctx.beginPath();
-            ctx.moveTo(0, 22); // Long barrel
+            ctx.ellipse(0, 4, 3, 7, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        else if (this.type === 'INTERCEPTOR') {
+            // 💠 TWIN-BOOM SPACE INTERCEPTOR (Cyan / Lightning Fast)
+            const hullGrad = ctx.createLinearGradient(-18, 0, 18, 0);
+            hullGrad.addColorStop(0, '#002b3d');
+            hullGrad.addColorStop(0.5, '#00ffcc');
+            hullGrad.addColorStop(1, '#002b3d');
+
+            ctx.fillStyle = hullGrad;
+            ctx.strokeStyle = '#00ffcc';
+            ctx.lineWidth = 1.5;
+            ctx.shadowColor = '#00ffcc';
+            ctx.shadowBlur = 8;
+
+            // Twin Boom Fuselage
+            ctx.beginPath();
+            ctx.moveTo(0, 16);         // Central Cockpit Nose
             ctx.lineTo(6, 4);
-            ctx.lineTo(14, -8);
-            ctx.lineTo(0, -14);
-            ctx.lineTo(-14, -8);
+            ctx.lineTo(16, 2);         // Right Boom Nose
+            ctx.lineTo(16, -14);       // Right Engine
+            ctx.lineTo(10, -14);
+            ctx.lineTo(8, -6);         // Wing connector
+            ctx.lineTo(0, -10);        // Central Tail
+            ctx.lineTo(-8, -6);
+            ctx.lineTo(-10, -14);
+            ctx.lineTo(-16, -14);      // Left Engine
+            ctx.lineTo(-16, 2);        // Left Boom Nose
             ctx.lineTo(-6, 4);
             ctx.closePath();
             ctx.fill();
+            ctx.stroke();
 
-            ctx.fillStyle = '#ffe600';
-            ctx.beginPath();
-            ctx.arc(0, 2, 4, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (this.type === 'MINELAYER') {
-            // Heavy Armored Sphere with spikes
-            ctx.beginPath();
-            ctx.arc(0, 0, 14, 0, Math.PI * 2);
-            ctx.fill();
+            // Dual Thruster Glows
+            ctx.fillStyle = '#00f0ff';
+            ctx.fillRect(11, -16, 4, 3);
+            ctx.fillRect(-15, -16, 4, 3);
+        }
+        else if (this.type === 'SNIPER') {
+            // 🔶 RAILGUN STRIKE FIGHTER (Long Barrel with Power Coils)
+            const hullGrad = ctx.createLinearGradient(-16, 0, 16, 0);
+            hullGrad.addColorStop(0, '#4a2500');
+            hullGrad.addColorStop(0.5, '#ff8800');
+            hullGrad.addColorStop(1, '#4a2500');
 
-            ctx.fillStyle = '#1b0826';
+            ctx.fillStyle = hullGrad;
+            ctx.strokeStyle = '#ff8800';
+            ctx.lineWidth = 1.5;
+            ctx.shadowColor = '#ff8800';
+            ctx.shadowBlur = 8;
+
+            // Extended Needle Railgun
             ctx.beginPath();
-            ctx.arc(0, 0, 8, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (this.type === 'SPLITTER') {
-            // Bio-Alien Diamond
-            ctx.beginPath();
-            ctx.moveTo(0, -18);
-            ctx.lineTo(18, 0);
-            ctx.lineTo(0, 18);
-            ctx.lineTo(-18, 0);
+            ctx.moveTo(0, 24);         // Railgun Tip
+            ctx.lineTo(3, 4);
+            ctx.lineTo(16, -10);       // Right Canard
+            ctx.lineTo(12, -16);
+            ctx.lineTo(4, -10);
+            ctx.lineTo(0, -14);        // Tail
+            ctx.lineTo(-4, -10);
+            ctx.lineTo(-12, -16);
+            ctx.lineTo(-16, -10);      // Left Canard
+            ctx.lineTo(-3, 4);
             ctx.closePath();
             ctx.fill();
+            ctx.stroke();
 
+            // Electromagnetic Coils along barrel
             ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(0, 0, 5, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (this.type === 'SENTINEL') {
-            // Hexagonal Shield Fortress
+            ctx.fillRect(-2, 10, 4, 2);
+            ctx.fillRect(-2, 16, 4, 2);
+        }
+        else if (this.type === 'MINELAYER') {
+            // 🟣 ARMORED ORDNANCE CRUISER (Heavy Hexagon with Spikes)
+            const hullGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, 18);
+            hullGrad.addColorStop(0, '#ffffff');
+            hullGrad.addColorStop(0.4, '#e000ff');
+            hullGrad.addColorStop(1, '#1b0028');
+
+            ctx.fillStyle = hullGrad;
+            ctx.strokeStyle = '#e000ff';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = '#e000ff';
+            ctx.shadowBlur = 10;
+
+            // Armored Hexagon
             ctx.beginPath();
             for (let i = 0; i < 6; i++) {
                 const a = i * (Math.PI / 3);
@@ -1024,43 +1120,148 @@ class Enemy {
             }
             ctx.closePath();
             ctx.fill();
+            ctx.stroke();
 
-            // Rotating Shield Ring
+            // Mine Release Ports
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(0, 0, 7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff00aa';
+            ctx.beginPath();
+            ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        else if (this.type === 'SPLITTER') {
+            // 🟢 BIO-MECHANICAL ALIEN CARAPACE (Emerald Diamond)
+            const hullGrad = ctx.createLinearGradient(-18, 0, 18, 0);
+            hullGrad.addColorStop(0, '#0a3805');
+            hullGrad.addColorStop(0.5, '#39ff14');
+            hullGrad.addColorStop(1, '#0a3805');
+
+            ctx.fillStyle = hullGrad;
+            ctx.strokeStyle = '#39ff14';
+            ctx.lineWidth = 1.5;
+            ctx.shadowColor = '#39ff14';
+            ctx.shadowBlur = 8;
+
+            ctx.beginPath();
+            ctx.moveTo(0, -20);
+            ctx.lineTo(20, 0);
+            ctx.lineTo(0, 20);
+            ctx.lineTo(-20, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Organic Splitting Seam
             ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, -18);
+            ctx.lineTo(0, 18);
+            ctx.stroke();
+        }
+        else if (this.type === 'SENTINEL') {
+            // 🛡️ CYBER SENTINEL (Heavy Shield Fortress)
+            const hullGrad = ctx.createLinearGradient(-20, 0, 20, 0);
+            hullGrad.addColorStop(0, '#001a33');
+            hullGrad.addColorStop(0.5, '#00bfff');
+            hullGrad.addColorStop(1, '#001a33');
+
+            ctx.fillStyle = hullGrad;
+            ctx.strokeStyle = '#00bfff';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = '#00bfff';
+            ctx.shadowBlur = 10;
+
+            ctx.beginPath();
+            ctx.moveTo(0, -18);
+            ctx.lineTo(18, -8);
+            ctx.lineTo(18, 12);
+            ctx.lineTo(0, 18);
+            ctx.lineTo(-18, 12);
+            ctx.lineTo(-18, -8);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Rotating Energy Shield Ring
+            ctx.strokeStyle = '#00ffff';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.arc(0, 0, 20, this.shieldAngle, this.shieldAngle + Math.PI);
+            ctx.arc(0, 0, 22, this.shieldAngle, this.shieldAngle + Math.PI);
             ctx.stroke();
-        } else if (this.type === 'WARP_HUNTER') {
-            // Angular Mecha Delta
-            ctx.beginPath();
-            ctx.moveTo(0, 16);
-            ctx.lineTo(16, -16);
-            ctx.lineTo(0, -8);
-            ctx.lineTo(-16, -16);
-            ctx.closePath();
-            ctx.fill();
+        }
+        else if (this.type === 'WARP_HUNTER') {
+            // 🔮 QUANTUM PHASE FIGHTER (Magenta Variable Geometry)
+            const hullGrad = ctx.createLinearGradient(-18, 0, 18, 0);
+            hullGrad.addColorStop(0, '#3d0028');
+            hullGrad.addColorStop(0.5, '#ff00aa');
+            hullGrad.addColorStop(1, '#3d0028');
 
-            ctx.fillStyle = '#ff00aa';
-            ctx.fillRect(-3, -2, 6, 8);
-        } else if (this.type === 'PHANTOM') {
-            // Sleek Ghost Jet
+            ctx.fillStyle = hullGrad;
+            ctx.strokeStyle = '#ff00aa';
+            ctx.lineWidth = 1.5;
+            ctx.shadowColor = '#ff00aa';
+            ctx.shadowBlur = 8;
+
             ctx.beginPath();
-            ctx.moveTo(0, 16);
-            ctx.lineTo(12, -10);
-            ctx.lineTo(0, -14);
-            ctx.lineTo(-12, -10);
+            ctx.moveTo(0, 18);
+            ctx.lineTo(18, -16);
+            ctx.lineTo(0, -8);
+            ctx.lineTo(-18, -16);
             ctx.closePath();
             ctx.fill();
-        } else {
-            // Standard Drone Scout
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-2, -2, 4, 8);
+        }
+        else if (this.type === 'PHANTOM') {
+            // 👤 STEALTH SHROUD GHOST (Obsidian Faceted Jet)
+            ctx.fillStyle = 'rgba(25, 10, 45, 0.9)';
+            ctx.strokeStyle = '#bf00ff';
+            ctx.lineWidth = 1.5;
+            ctx.shadowColor = '#bf00ff';
+            ctx.shadowBlur = 8;
+
             ctx.beginPath();
-            ctx.moveTo(0, 14);
-            ctx.lineTo(12, -4);
-            ctx.lineTo(8, -12);
-            ctx.lineTo(-8, -12);
-            ctx.lineTo(-12, -4);
+            ctx.moveTo(0, 18);
+            ctx.lineTo(16, -10);
+            ctx.lineTo(0, -14);
+            ctx.lineTo(-16, -10);
             ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+        else {
+            // 🛸 AERO-SCOUT DRONE (Cyan Sleek Delta Fighter)
+            const hullGrad = ctx.createLinearGradient(-15, 0, 15, 0);
+            hullGrad.addColorStop(0, '#002533');
+            hullGrad.addColorStop(0.5, '#00f0ff');
+            hullGrad.addColorStop(1, '#002533');
+
+            ctx.fillStyle = hullGrad;
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 1.5;
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 6;
+
+            ctx.beginPath();
+            ctx.moveTo(0, 16);
+            ctx.lineTo(14, -6);
+            ctx.lineTo(8, -14);
+            ctx.lineTo(-8, -14);
+            ctx.lineTo(-14, -6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Cockpit Glint
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 2.5, 5, 0, 0, Math.PI * 2);
             ctx.fill();
         }
 
